@@ -1,0 +1,1101 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#193b35">
+  <title>Espaço Bruna Alves — Gestão</title>
+  <style>
+    :root {
+      --ink: #24332f;
+      --muted: #87918d;
+      --line: #e9ece8;
+      --canvas: #f6f7f4;
+      --paper: #ffffff;
+      --forest: #193b35;
+      --forest-2: #244a42;
+      --sage: #e8f1e9;
+      --sage-ink: #52745a;
+      --lavender: #f0edfa;
+      --lavender-ink: #7666a3;
+      --peach: #fbefe5;
+      --peach-ink: #b97848;
+      --blue: #edf3f8;
+      --blue-ink: #617f9b;
+      --rose: #f9eceb;
+      --rose-ink: #b76a68;
+      --gold: #d4b783;
+      --shadow: 0 10px 30px rgba(30, 52, 45, .055);
+      --radius: 16px;
+    }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; min-height: 100%; background: var(--canvas); color: var(--ink); font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+    button, input, select, textarea { font: inherit; }
+    button { cursor: pointer; }
+    .app-shell { min-height: 100vh; }
+    .sidebar { width: 248px; position: fixed; inset: 0 auto 0 0; z-index: 20; display: flex; flex-direction: column; padding: 25px 16px 17px; background: var(--forest); color: #edf2ed; transition: transform .25s ease; }
+    .brand { display:flex; align-items:center; gap: 11px; padding: 0 11px 28px; }
+    .brand-mark { width: 37px; height: 37px; flex: none; display:grid; place-items:center; border:1px solid rgba(222,201,157,.5); border-radius: 12px; color: #e4d0a5; background: rgba(255,255,255,.045); }
+    .brand-word { font-family: Georgia, "Times New Roman", serif; font-size: 16px; letter-spacing: -.25px; color:#fff; line-height:1.15; white-space:nowrap; }
+    .brand-word span { color:#dcc89e; }
+    .brand-caption { display:block; margin-top:5px; color:#9fb2a9; font-size:8px; font-weight:700; letter-spacing:1.65px; }
+    .branch-switch { display:flex; align-items:center; justify-content:space-between; gap:10px; margin:0 3px 25px; padding:11px 12px; border:1px solid rgba(255,255,255,.11); border-radius:12px; background:rgba(255,255,255,.055); color:#d9e4dd; font-size:11px; }
+    .branch-meta { display:flex; align-items:center; gap:9px; min-width:0; }
+    .branch-meta span:last-child { overflow:hidden; white-space:nowrap; text-overflow:ellipsis; }
+    .branch-pin { display:grid; place-items:center; width:25px;height:25px;border-radius:8px;background:rgba(215,193,148,.16);color:#e2ce9f; }
+    .nav-section { margin:0 11px 9px; color:#829b90; font-size:9px; font-weight:750; text-transform:uppercase; letter-spacing:1.45px; }
+    .nav-list { display:grid; gap:4px; margin-bottom:24px; }
+    .nav-link { width:100%; border:0; display:flex; align-items:center; gap:12px; padding:11px 12px; color:#bccbc3; background:transparent; text-align:left; border-radius:10px; font-size:12px; font-weight:550; transition:background .18s, color .18s; }
+    .nav-link svg { width:17px;height:17px; opacity:.92; flex:none; }
+    .nav-link:hover { color:#fff; background:rgba(255,255,255,.07); }
+    .nav-link.active { color:#fff; background:#2c5148; box-shadow:inset 2px 0 #d9c69b; }
+    .nav-link .nav-badge { margin-left:auto; min-width:21px; height:20px; display:grid; place-items:center; padding:0 5px; border-radius:7px; color:#d7e8de; background:rgba(255,255,255,.10); font-size:10px; }
+    .sidebar-spacer { flex:1; }
+    .sidebar-help { display:flex; gap:10px; align-items:center; margin:0 4px 16px; padding:13px; border-radius:12px; color:#b8c9c0; background:rgba(255,255,255,.055); }
+    .sidebar-help svg { color:#dfc99a; flex:none; }
+    .sidebar-help strong { display:block; color:#e6eee9; font-size:10px; font-weight:650; }
+    .sidebar-help small { display:block; margin-top:3px; color:#8fa69a; font-size:9px; }
+    .sidebar-user { display:flex; align-items:center; gap:10px; padding:15px 7px 0; border-top:1px solid rgba(255,255,255,.1); }
+    .avatar { display:grid; place-items:center; flex:none; width:35px;height:35px;border-radius:12px; color:#6d786a; background:#e5e8dc; font-size:11px;font-weight:750; }
+    .sidebar-user .avatar { width:34px;height:34px;background:#d9c9a6;color:#31453e; }
+    .user-details { min-width:0; flex:1; }
+    .user-details strong { display:block; color:#f2f5f1; font-size:11px; font-weight:650; }
+    .user-details span { display:block; margin-top:3px; color:#96aca0; font-size:9px; }
+    .main-area { min-height:100vh; margin-left:248px; }
+    .topbar { position:sticky; top:0; z-index:15; height:70px; display:flex; align-items:center; justify-content:space-between; gap:18px; padding:0 34px; border-bottom:1px solid #e9ece8; background:rgba(255,255,255,.94); backdrop-filter:blur(12px); }
+    .topbar-left { display:flex; align-items:center; gap:14px; min-width:160px; }
+    .breadcrumb { color:#a0aaa5; font-size:9px; font-weight:750; letter-spacing:1.2px; text-transform:uppercase; }
+    .breadcrumb b { color:#3d5148; font-weight:750; }
+    .mobile-menu { display:none; border:0; background:none; color:var(--ink); padding:5px; }
+    .topbar-actions { display:flex; align-items:center; gap:11px; }
+    .global-search { position:relative; width:min(260px, 25vw); }
+    .global-search svg { position:absolute; left:12px; top:50%; transform:translateY(-50%); color:#9aa59f; }
+    .global-search input { width:100%; height:37px; padding:0 38px 0 36px; border:1px solid #edf0ec; outline:0; border-radius:11px; background:#f8f9f7; color:var(--ink); font-size:11px; transition:border .2s, background .2s; }
+    .global-search input:focus { border-color:#b9c8be; background:#fff; }
+    .search-shortcut { position:absolute; right:9px; top:9px; padding:2px 5px; border:1px solid #e5e9e5; border-radius:5px; color:#a6afaa; font-size:9px; }
+    .icon-button { position:relative; width:36px;height:36px;display:grid;place-items:center;border:1px solid #eef0ed;border-radius:11px;background:#fff;color:#687771; }
+    .icon-button:hover { background:#f8faf8; color:var(--forest); }
+    .notification-dot { position:absolute; right:8px; top:8px; width:6px;height:6px;border:1px solid #fff;border-radius:50%;background:#d78270; }
+    .role-wrap { position:relative; }
+    .role-button { display:flex; align-items:center; gap:8px; padding:4px 0 4px 7px; border:0; background:transparent; color:var(--ink); text-align:left; }
+    .role-button .avatar { width:34px;height:34px; }
+    .role-name { display:block; font-size:10px;font-weight:700; }
+    .role-label { display:block; margin-top:3px; color:#929d97; font-size:9px; }
+    .role-menu { position:absolute; top:46px; right:0; z-index:30; width:192px; padding:6px; border:1px solid #e8ece8; border-radius:13px; background:#fff; box-shadow:0 15px 35px rgba(25,59,53,.16); }
+    .role-menu[hidden] { display:none; }
+    .role-menu p { margin:7px 9px 5px; color:#9aa49f; font-size:9px; font-weight:750; letter-spacing:1px; text-transform:uppercase; }
+    .role-option { display:flex; width:100%; align-items:center; gap:9px; padding:9px; border:0; border-radius:8px; background:#fff; color:#53615b; text-align:left; font-size:11px; }
+    .role-option:hover, .role-option.selected { color:var(--forest); background:#f3f6f2; }
+    .role-option span { display:grid;place-items:center;width:23px;height:23px;border-radius:8px;background:#e9efe9;color:#5d7b65; }
+    .content { max-width:1500px; margin:0 auto; padding:30px 34px 48px; }
+    .page-heading { display:flex; align-items:flex-end; justify-content:space-between; gap:18px; margin-bottom:24px; }
+    .eyebrow { display:flex; align-items:center; gap:7px; color:#7e9287; font-size:9px; font-weight:760; letter-spacing:1.25px; text-transform:uppercase; }
+    .eyebrow .eyebrow-dot { width:5px;height:5px;border-radius:50%;background:#c4a973; }
+    h1 { margin:7px 0 0; color:#263a33; font-family:Georgia, "Times New Roman", serif; font-size:30px; font-weight:500; letter-spacing:-.55px; }
+    .page-subtitle { margin:7px 0 0; color:#8d9892; font-size:11px; }
+    .heading-actions { display:flex; align-items:center; gap:8px; flex:none; }
+    .btn { display:inline-flex; align-items:center; justify-content:center; gap:8px; min-height:38px; padding:0 14px; border:1px solid #e5eae5; border-radius:10px; color:#53635a; background:#fff; font-size:10px; font-weight:650; transition:all .18s; }
+    .btn:hover { border-color:#ccd7cd; background:#fafcf9; }
+    .btn-primary { border-color:var(--forest); background:var(--forest); color:#fff; box-shadow:0 4px 10px rgba(25,59,53,.12); }
+    .btn-primary:hover { border-color:#244a42; background:#244a42; }
+    .btn-soft { border-color:#e7eee8; background:#f3f7f2; color:#4a6854; }
+    .btn-danger { border-color:#f0dfdc; background:#fff8f7; color:#a45b55; }
+    .btn-sm { min-height:32px; padding:0 11px; border-radius:9px; font-size:9px; }
+    .btn-icon { width:33px; min-height:33px; padding:0; }
+    .metric-grid { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:13px; margin-bottom:19px; }
+    .metric-card { min-height:111px; padding:17px 18px; border:1px solid #e9ede9; border-radius:15px; background:#fff; box-shadow:0 2px 8px rgba(36,51,47,.018); }
+    .metric-top { display:flex; align-items:center; justify-content:space-between; gap:8px; }
+    .metric-label { color:#839089; font-size:10px; font-weight:570; }
+    .metric-icon { width:29px;height:29px;display:grid;place-items:center;border-radius:9px;background:#eff4ef;color:#62816a; }
+    .metric-icon.peach { background:#fcf1e8;color:#b87b4e; }
+    .metric-icon.lavender { background:#f1eff8;color:#8172a5; }
+    .metric-icon.blue { background:#edf3f7;color:#66839c; }
+    .metric-value { margin-top:12px; color:#30413a; font-size:22px; font-weight:690; letter-spacing:-.7px; }
+    .metric-foot { display:flex; align-items:center; gap:5px; margin-top:5px; color:#9aa39e; font-size:9px; }
+    .trend-up { color:#6c9472; font-weight:700; }
+    .dashboard-grid { display:grid; grid-template-columns:minmax(0,1.65fr) minmax(255px,.85fr); gap:17px; align-items:start; }
+    .card { border:1px solid #e8ece8; border-radius:var(--radius); background:#fff; box-shadow:0 2px 8px rgba(36,51,47,.018); }
+    .card-header { display:flex; align-items:center; justify-content:space-between; gap:12px; padding:17px 19px; border-bottom:1px solid #f0f2ef; }
+    .card-title { color:#34453d; font-size:12px; font-weight:700; }
+    .card-subtitle { margin-top:4px; color:#99a39e; font-size:9px; }
+    .text-button { display:inline-flex; align-items:center; gap:5px; border:0; background:none; color:#6c8674; font-size:9px; font-weight:700; }
+    .text-button:hover { color:#355f49; }
+    .calendar-toolbar { display:flex; align-items:center; justify-content:space-between; gap:10px; padding:14px 18px; border-bottom:1px solid #f0f2ef; }
+    .calendar-nav { display:flex; align-items:center; gap:7px; }
+    .date-main { margin-left:4px; color:#3d5046; font-size:11px; font-weight:700; }
+    .view-switch { display:flex; padding:3px; border:1px solid #edf0ed; border-radius:9px; background:#f7f8f6; }
+    .view-switch button { padding:6px 10px; border:0; border-radius:7px; background:transparent; color:#929d96; font-size:9px; font-weight:650; }
+    .view-switch button.active { color:#45634d; background:#fff; box-shadow:0 1px 4px rgba(40,55,46,.1); }
+    .filter-select { height:32px; padding:0 27px 0 10px; border:1px solid #edf0ed; border-radius:9px; outline:0; background:#fff; color:#68766e; font-size:9px; }
+    .calendar-legend { display:flex; align-items:center; gap:13px; padding:12px 19px 3px; color:#9aa49e; font-size:8px; }
+    .legend-item { display:inline-flex; align-items:center; gap:5px; }
+    .legend-dot { width:6px;height:6px;border-radius:50%;background:#8eae91; }
+    .legend-dot.in-service { background:#d39b72; }
+    .legend-dot.scheduled { background:#83a0b4; }
+    .legend-dot.done { background:#b2b8b2; }
+    .agenda-list { padding:7px 16px 12px; }
+    .week-grid { display:grid; grid-template-columns:repeat(5,minmax(118px,1fr)); gap:9px; overflow-x:auto; padding:14px; }
+    .week-day { min-width:118px; padding:10px 9px; border:1px solid #edf0ed; border-radius:11px; background:#fbfcfb; }
+    .week-day-head { display:flex; align-items:center; justify-content:space-between; margin-bottom:10px; color:#829088; font-size:8px; font-weight:750; text-transform:uppercase; letter-spacing:.6px; }
+    .week-day-head strong { display:grid; place-items:center; width:25px;height:25px;border-radius:8px;background:#edf3ed;color:#4d6c53;font-size:10px; }
+    .week-appointment { display:block; width:100%; margin:6px 0; padding:8px; border:1px solid #e6eee6; border-left:3px solid #8eae91; border-radius:8px; background:#fff; text-align:left; cursor:pointer; }
+    .week-appointment:hover { border-color:#c8d9ca; box-shadow:0 3px 9px rgba(35,63,49,.07); }
+    .week-appointment.service { border-left-color:#d39b72; background:#fffdfb; }
+    .week-appointment.scheduled { border-left-color:#83a0b4; }
+    .week-appointment.done { border-left-color:#b7beb8; }
+    .week-appointment time { display:block; margin-bottom:5px; color:#718077; font-size:8px; font-weight:750; }
+    .week-appointment strong { display:block; overflow:hidden; color:#405148; font-size:8px; white-space:nowrap; text-overflow:ellipsis; }
+    .week-appointment small { display:block; overflow:hidden; margin-top:4px; color:#9aa49e; font-size:7px; white-space:nowrap; text-overflow:ellipsis; }
+    .kanban-intro { display:flex; align-items:center; justify-content:space-between; gap:12px; padding:12px 17px 0; color:#738279; font-size:9px; }
+    .kanban-intro strong { color:#53665b; font-weight:700; }
+    .kanban-intro span { color:#9aa49e; font-size:8px; }
+    .kanban-board { display:flex; align-items:stretch; gap:10px; min-height:400px; overflow-x:auto; padding:13px 14px 18px; scrollbar-color:#c8d5ca #f4f6f3; scrollbar-width:thin; }
+    .kanban-lane { flex:0 0 174px; min-height:375px; overflow:hidden; border:1px solid #e8ede8; border-radius:12px; background:#f9fbf9; scroll-snap-align:start; }
+    .kanban-lane.queue-lane { flex-basis:218px; border-color:#ebe4d6; background:#fbf9f4; }
+    .kanban-lane-head { position:sticky; top:0; z-index:1; display:flex; align-items:center; justify-content:space-between; gap:8px; padding:11px 11px; border-bottom:1px solid #e9eee9; background:rgba(255,255,255,.92); }
+    .queue-lane .kanban-lane-head { border-color:#eee7d9; background:rgba(255,255,255,.78); }
+    .kanban-lane-head strong { color:#4c5e53; font-size:10px; }
+    .kanban-lane-head small { color:#9da8a1; font-size:8px; }
+    .kanban-count { display:grid; place-items:center; min-width:20px; height:20px; padding:0 5px; border-radius:7px; background:#edf3ed; color:#67826c; font-size:8px; font-weight:750; }
+    .queue-lane .kanban-count { background:#f4ecdb; color:#a2824e; }
+    .kanban-dropzone { display:grid; align-content:start; gap:8px; min-height:320px; padding:9px; border:1px dashed transparent; border-radius:10px; transition:background .16s,border-color .16s; }
+    .kanban-dropzone.drag-over { border-color:#7fa183; background:#edf5ed; }
+    .kanban-empty-slot { display:grid; place-items:center; min-height:57px; padding:9px; border:1px dashed #dce5dd; border-radius:10px; color:#a0aaa3; font-size:8px; text-align:center; }
+    .kanban-card { display:block; width:100%; padding:10px; border:1px solid #e6ece6; border-left:3px solid #87a88a; border-radius:10px; background:#fff; color:#45564c; text-align:left; cursor:grab; box-shadow:0 2px 5px rgba(40,58,45,.025); transition:transform .16s,box-shadow .16s,border-color .16s; }
+    .kanban-card:hover { transform:translateY(-1px); border-color:#cfded0; box-shadow:0 5px 12px rgba(35,63,49,.07); }
+    .kanban-card:active { cursor:grabbing; }
+    .kanban-card.selected { border-color:#6d9271; box-shadow:0 0 0 3px rgba(109,146,113,.16); }
+    .kanban-card.in-service { border-left-color:#d39b72; background:#fffdfa; }
+    .kanban-card.done { border-left-color:#b7beb8; opacity:.78; }
+    .kanban-card-head { display:flex; align-items:center; justify-content:space-between; gap:5px; margin-bottom:8px; }
+    .kanban-card-time { color:#62806a; font-size:8px; font-weight:750; }
+    .kanban-card-state { padding:3px 5px; border-radius:5px; background:#f0f4ef; color:#76867a; font-size:7px; white-space:nowrap; }
+    .kanban-card strong { display:block; color:#3d5145; font-size:9px; line-height:1.35; }
+    .kanban-card small { display:block; overflow:hidden; margin-top:4px; color:#929e96; font-size:8px; line-height:1.35; text-overflow:ellipsis; }
+    .kanban-card-foot { display:flex; align-items:center; justify-content:space-between; gap:5px; margin-top:9px; padding-top:7px; border-top:1px solid #f0f2ef; color:#8b9890; font-size:7px; }
+    .kanban-card-foot em { color:#7b927e; font-style:normal; font-weight:700; }
+    .queue-lane .kanban-card { border-left-color:#cfb37e; }
+    .kanban-queue-empty { padding:22px 12px; color:#a39a86; font-size:8px; line-height:1.5; text-align:center; }
+    .appointment-row { display:grid; grid-template-columns:54px minmax(0,1fr); gap:9px; align-items:stretch; min-height:67px; padding:6px 0; cursor:pointer; }
+    .time-label { padding-top:12px; color:#738179; font-size:10px; font-weight:700; text-align:right; }
+    .time-label small { display:block; margin-top:3px; color:#a7b0aa; font-size:8px; font-weight:500; }
+    .appointment-card { position:relative; display:flex; align-items:center; gap:11px; min-width:0; padding:10px 12px; border:1px solid #edf1ed; border-left:3px solid #8eae91; border-radius:11px; background:#fbfcfb; transition:transform .18s, box-shadow .18s, border-color .18s; }
+    .appointment-row:hover .appointment-card { transform:translateY(-1px); border-color:#d9e5da; box-shadow:0 5px 12px rgba(35,63,49,.06); }
+    .appointment-card.status-service { border-left-color:#d39b72; background:#fffdfb; }
+    .appointment-card.status-scheduled { border-left-color:#83a0b4; }
+    .appointment-card.status-done { border-left-color:#b7beb8; background:#fafbfa; }
+    .client-avatar { width:34px;height:34px;display:grid;place-items:center;flex:none;border-radius:11px;background:#e7ede6;color:#55705b;font-size:9px;font-weight:750; }
+    .client-avatar.tone-2 { background:#f5e8df;color:#aa7653; }
+    .client-avatar.tone-3 { background:#ece9f5;color:#7b6d9a; }
+    .client-avatar.tone-4 { background:#e5edf2;color:#5b7a91; }
+    .appt-main { min-width:0; flex:1; }
+    .appt-client { overflow:hidden; color:#35463e; font-size:10px; font-weight:700; white-space:nowrap; text-overflow:ellipsis; }
+    .appt-service { overflow:hidden; margin-top:4px; color:#929d96; font-size:9px; white-space:nowrap; text-overflow:ellipsis; }
+    .appt-professional { min-width:90px; color:#77857d; font-size:9px; text-align:right; }
+    .status-pill { display:inline-flex; align-items:center; gap:5px; padding:5px 7px; border-radius:7px; background:#edf4ed; color:#648269; font-size:8px; font-weight:700; white-space:nowrap; }
+    .status-pill::before { width:5px;height:5px;border-radius:50%;background:currentColor;content:""; }
+    .status-pill.service { background:#fcf1e9;color:#b67e54; }
+    .status-pill.scheduled { background:#edf3f7;color:#6b879b; }
+    .status-pill.done { background:#f0f2ef;color:#858e87; }
+    .status-pill.noshow { background:#faeceb;color:#b26865; }
+    .side-stack { display:grid; gap:15px; }
+    .next-card { padding:18px; background:linear-gradient(145deg,#23473e,#183a33); color:#fff; border:0; overflow:hidden; position:relative; }
+    .next-card::after { content:""; position:absolute; width:150px;height:150px; right:-52px;top:-67px;border:1px solid rgba(226,207,165,.16);border-radius:50%;box-shadow:0 0 0 19px rgba(255,255,255,.018),0 0 0 40px rgba(255,255,255,.018); }
+    .next-card .card-title { color:#eef4ef; }
+    .next-card .card-subtitle { color:#a9c0b3; }
+    .next-time { display:flex; align-items:baseline; gap:7px; margin:20px 0 12px; }
+    .next-time strong { font-size:30px; font-family:Georgia,serif; font-weight:500; }
+    .next-time span { color:#b2c5bb; font-size:9px; }
+    .next-client { display:flex; align-items:center; gap:10px; padding:11px; border:1px solid rgba(255,255,255,.12); border-radius:11px; background:rgba(255,255,255,.07); }
+    .next-client .client-avatar { background:#e0d0ac;color:#435447; }
+    .next-client .appt-client { color:#fff; }
+    .next-client .appt-service { color:#bdd0c5; }
+    .next-footer { display:flex; justify-content:space-between; align-items:center; margin-top:13px; color:#b4c9bd; font-size:9px; }
+    .next-footer button { border:0; background:transparent; color:#e4d0a5; font-size:9px;font-weight:700; }
+    .team-list { padding:4px 17px 12px; }
+    .team-row { display:flex; align-items:center; gap:9px; padding:10px 0; border-bottom:1px solid #f1f3f0; }
+    .team-row:last-child { border-bottom:0; }
+    .team-row .avatar { width:31px;height:31px;border-radius:10px;font-size:9px; }
+    .team-info { min-width:0; flex:1; }
+    .team-info strong { display:block; color:#536159; font-size:9px; font-weight:650; }
+    .team-info small { display:block; margin-top:3px; color:#a0aaa4; font-size:8px; }
+    .team-count { color:#6f8875; font-size:9px;font-weight:700; }
+    .birthday-list { padding:5px 17px 12px; }
+    .birthday-item { display:flex; align-items:center; gap:10px; padding:9px 0; }
+    .birthday-date { display:grid; place-items:center; width:31px;height:33px; border-radius:9px;background:#f8f1e7;color:#a67d43;font-size:8px;font-weight:750;line-height:1.25; }
+    .birthday-info { min-width:0;flex:1; }
+    .birthday-info strong { display:block;color:#536159;font-size:9px; }
+    .birthday-info small { display:block;margin-top:3px;color:#9ba59f;font-size:8px; }
+    .page-toolbar { display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:15px; }
+    .toolbar-left { display:flex;align-items:center;gap:8px; }
+    .search-box { position:relative; width:min(300px,50vw); }
+    .search-box svg { position:absolute;left:11px;top:50%;transform:translateY(-50%);color:#9aa69f; }
+    .search-box input { width:100%;height:36px;padding:0 12px 0 34px;border:1px solid #e8ece8;border-radius:10px;background:#fff;outline:0;color:var(--ink);font-size:10px; }
+    .search-box input:focus { border-color:#b9c8be; }
+    .table-card { overflow:hidden; }
+    .data-table { width:100%; border-collapse:collapse; }
+    .data-table th { padding:12px 16px; color:#9ba59f; background:#fbfcfb; border-bottom:1px solid #edf0ed; text-align:left; font-size:8px; font-weight:750; letter-spacing:.85px; text-transform:uppercase; white-space:nowrap; }
+    .data-table td { padding:13px 16px; color:#69766f; border-bottom:1px solid #f0f2ef; font-size:9px; white-space:nowrap; }
+    .data-table tr:last-child td { border-bottom:0; }
+    .data-table tbody tr:hover { background:#fbfcfb; }
+    .table-person { display:flex;align-items:center;gap:9px; }
+    .table-person .avatar { width:31px;height:31px;border-radius:10px;font-size:9px; }
+    .table-person strong { display:block;color:#405148;font-size:10px;font-weight:700; }
+    .table-person small { display:block;margin-top:3px;color:#9ba59f;font-size:8px; }
+    .tag { display:inline-flex;align-items:center;padding:5px 8px;border-radius:7px;background:#eff4ef;color:#64806a;font-size:8px;font-weight:650; }
+    .tag.gold { background:#f8f1e6;color:#a9844d; }
+    .tag.blue { background:#edf3f7;color:#66839a; }
+    .tag.gray { background:#f1f2f0;color:#89928c; }
+    .table-action { display:inline-grid;place-items:center;width:27px;height:27px;border:1px solid #ecefeb;border-radius:8px;color:#77847c;background:#fff; }
+    .table-footer { display:flex;justify-content:space-between;align-items:center;padding:13px 16px;border-top:1px solid #f0f2ef;color:#9ba59f;font-size:9px; }
+    .filter-tabs { display:flex;align-items:center;gap:5px;padding:4px;border:1px solid #e9ede9;border-radius:10px;background:#f6f8f5; }
+    .filter-tabs button { padding:7px 10px;border:0;border-radius:7px;background:transparent;color:#8a9690;font-size:9px;font-weight:650; }
+    .filter-tabs button.active { background:#fff;color:#4c6753;box-shadow:0 1px 4px rgba(30,50,42,.08); }
+    .summary-banner { display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:16px;padding:15px 18px;border:1px solid #e2ebe3;border-radius:13px;background:linear-gradient(100deg,#f0f6ef,#fbfcfa); }
+    .summary-banner strong { color:#405c47;font-size:10px; }
+    .summary-banner p { margin:4px 0 0;color:#819087;font-size:9px; }
+    .summary-banner .banner-right { color:#66846b;font-size:9px;font-weight:700;white-space:nowrap; }
+    .finance-grid { display:grid;grid-template-columns:minmax(0,1.35fr) minmax(260px,.75fr);gap:16px;margin-bottom:16px; }
+    .chart-card { padding:17px 19px 15px; }
+    .chart-top { display:flex;align-items:flex-start;justify-content:space-between;gap:12px; }
+    .chart-value { margin-top:14px;color:#31453a;font-size:24px;font-weight:700;letter-spacing:-.6px; }
+    .chart-value small { margin-left:6px;color:#709276;font-size:9px;font-weight:650;letter-spacing:0; }
+    .chart-area { display:flex;align-items:flex-end;gap:12px;height:126px;margin-top:15px;padding:7px 3px 0;border-bottom:1px solid #edf0ed; }
+    .chart-col { display:flex;flex:1;flex-direction:column;align-items:center;justify-content:flex-end;height:100%;gap:7px; }
+    .chart-bar { width:min(25px,72%);min-height:8px;border-radius:5px 5px 2px 2px;background:#dce8dc;transition:height .3s; }
+    .chart-bar.current { background:#416b54; }
+    .chart-col span { color:#a1aba5;font-size:8px; }
+    .legend-row { display:flex;gap:13px;margin-top:12px;color:#89968f;font-size:8px; }
+    .legend-swatch { display:inline-block;width:7px;height:7px;margin-right:5px;border-radius:2px;background:#dce8dc; }
+    .legend-swatch.dark { background:#416b54; }
+    .profit-callout { display:flex;flex-direction:column;justify-content:space-between;padding:18px;background:#fff;border:1px solid #e8ece8;border-radius:15px; }
+    .profit-callout .metric-value { font-size:25px; }
+    .profit-breakdown { display:grid;gap:10px;margin-top:18px; }
+    .break-row { display:flex;align-items:center;justify-content:space-between;gap:12px;color:#829087;font-size:9px; }
+    .break-row strong { color:#536159;font-size:9px; }
+    .break-line { height:1px;background:#edf0ed; }
+    .positive { color:#638a68 !important; }
+    .negative { color:#b97868 !important; }
+    .commission-amount { color:#486650;font-weight:750; }
+    .stock-level { display:flex;align-items:center;gap:8px; }
+    .stock-track { width:80px;height:5px;border-radius:5px;background:#edf0ed;overflow:hidden; }
+    .stock-track span { display:block;height:100%;border-radius:5px;background:#82a184; }
+    .stock-track span.low { background:#d69a6c; }
+    .notice { display:flex;align-items:flex-start;gap:9px;padding:12px 14px;border:1px solid #f0e7d5;border-radius:11px;background:#fcf8f0;color:#917447;font-size:9px;line-height:1.5; }
+    .notice svg { flex:none;margin-top:1px; }
+    .empty-state { padding:42px 20px;text-align:center;color:#9aa49e;font-size:10px; }
+    .empty-state strong { display:block;margin-bottom:5px;color:#55645c;font-size:12px; }
+    .modal-backdrop { position:fixed;inset:0;z-index:100;display:grid;place-items:center;padding:18px;background:rgba(19,39,33,.42);backdrop-filter:blur(3px);animation:fadeIn .15s ease; }
+    @keyframes fadeIn { from { opacity:0; } to { opacity:1; } }
+    .modal { width:min(560px,100%);max-height:min(88vh,850px);overflow:auto;border:1px solid rgba(255,255,255,.5);border-radius:18px;background:#fff;box-shadow:0 25px 80px rgba(16,37,29,.24);animation:slideUp .18s ease; }
+    @keyframes slideUp { from { transform:translateY(8px);opacity:.7; } to { transform:translateY(0);opacity:1; } }
+    .modal.wide { width:min(700px,100%); }
+    .modal-header { display:flex;align-items:flex-start;justify-content:space-between;gap:15px;padding:20px 22px 16px;border-bottom:1px solid #edf0ed; }
+    .modal-header h2 { margin:0;color:#2e4439;font-family:Georgia,serif;font-size:21px;font-weight:500; }
+    .modal-header p { margin:5px 0 0;color:#92a098;font-size:9px; }
+    .modal-close { width:29px;height:29px;display:grid;place-items:center;border:1px solid #edf0ed;border-radius:9px;background:#fff;color:#758179; }
+    .modal-body { padding:19px 22px 22px; }
+    .form-grid { display:grid;grid-template-columns:1fr 1fr;gap:12px; }
+    .form-field { display:grid;gap:6px; }
+    .form-field.full { grid-column:1 / -1; }
+    .form-field label { color:#68776e;font-size:9px;font-weight:700; }
+    .form-field input,.form-field select,.form-field textarea { width:100%;min-height:37px;padding:8px 10px;border:1px solid #e5eae5;border-radius:9px;outline:0;background:#fff;color:#43534a;font-size:10px; }
+    .form-field textarea { min-height:75px;resize:vertical; }
+    .form-field input:focus,.form-field select:focus,.form-field textarea:focus { border-color:#adc2b0;box-shadow:0 0 0 3px rgba(105,143,111,.1); }
+    .modal-actions { display:flex;justify-content:flex-end;gap:8px;margin-top:19px;padding-top:15px;border-top:1px solid #eef1ee; }
+    .detail-head { display:flex;align-items:center;gap:12px;margin-bottom:17px;padding:13px;border-radius:12px;background:#f7f9f6; }
+    .detail-head .avatar { width:44px;height:44px;border-radius:14px;font-size:12px; }
+    .detail-head strong { display:block;color:#3b5044;font-size:12px; }
+    .detail-head small { display:block;margin-top:4px;color:#94a098;font-size:9px; }
+    .detail-section { margin:17px 0 0; }
+    .detail-section h3 { margin:0 0 9px;color:#839189;font-size:8px;font-weight:750;letter-spacing:1px;text-transform:uppercase; }
+    .detail-line { display:flex;justify-content:space-between;gap:10px;padding:8px 0;border-bottom:1px solid #f0f2f0;color:#78857d;font-size:9px; }
+    .detail-line strong { color:#4a5c51;font-weight:650;text-align:right; }
+    .checkout-lines { display:grid;gap:9px;margin-bottom:14px; }
+    .checkout-item { display:flex;align-items:center;justify-content:space-between;gap:12px;padding:11px 12px;border:1px solid #edf0ed;border-radius:10px;background:#fbfcfb; }
+    .checkout-item strong { display:block;color:#4c5c52;font-size:10px; }
+    .checkout-item small { display:block;margin-top:3px;color:#99a39d;font-size:8px; }
+    .checkout-item input { width:100px;height:31px;padding:0 8px;border:1px solid #e6ebe6;border-radius:8px;text-align:right;color:#44534a;font-size:10px; }
+    .checkout-total { display:flex;justify-content:space-between;align-items:center;margin:14px 0;padding:13px 14px;border-radius:10px;background:#f1f6f1;color:#6e7f73;font-size:9px; }
+    .checkout-total strong { color:#34533d;font-size:16px; }
+    .payments-list { display:grid;gap:8px; }
+    .payment-row { display:grid;grid-template-columns:1fr 120px 30px;align-items:end;gap:8px; }
+    .payment-row select,.payment-row input { width:100%;height:34px;padding:0 9px;border:1px solid #e5eae5;border-radius:8px;background:#fff;color:#506056;font-size:9px; }
+    .payment-row label { display:block;margin-bottom:5px;color:#8a9690;font-size:8px;font-weight:700; }
+    .remove-payment { width:29px;height:34px;border:1px solid #f0e8e7;border-radius:8px;background:#fff8f7;color:#b8756f; }
+    .payment-summary { display:flex;justify-content:space-between;margin-top:10px;color:#8b9890;font-size:9px; }
+    .payment-summary strong { color:#53715b; }
+    .validation-message { display:none;margin-top:9px;color:#ac625d;font-size:9px; }
+    .validation-message.show { display:block; }
+    .toast-container { position:fixed;right:22px;bottom:22px;z-index:150;display:grid;gap:8px; }
+    .toast { display:flex;align-items:center;gap:10px;min-width:240px;max-width:min(390px,calc(100vw - 40px));padding:12px 15px;border:1px solid #dfe8df;border-radius:12px;background:#fff;box-shadow:0 12px 32px rgba(25,59,53,.14);color:#4f6155;font-size:10px;animation:slideUp .2s ease; }
+    .toast svg { color:#668c6c;flex:none; }
+    .mobile-overlay { display:none; }
+    @media (max-width: 1120px) {
+      .sidebar { width:225px; }
+      .main-area { margin-left:225px; }
+      .content { padding:26px 23px 40px; }
+      .topbar { padding:0 23px; }
+      .metric-grid { gap:9px; }
+      .metric-card { padding:15px; }
+      .dashboard-grid { grid-template-columns:minmax(0,1.45fr) minmax(230px,.8fr); }
+      .appt-professional { display:none; }
+    }
+    @media (max-width: 860px) {
+      .sidebar { transform:translateX(-100%); width:255px; box-shadow:10px 0 30px rgba(18,45,36,.12); }
+      .sidebar.open { transform:translateX(0); }
+      .main-area { margin-left:0; }
+      .mobile-menu { display:grid;place-items:center; }
+      .mobile-overlay.visible { display:block;position:fixed;inset:0;z-index:19;background:rgba(22,42,35,.3); }
+      .dashboard-grid,.finance-grid { grid-template-columns:1fr; }
+      .side-stack { grid-template-columns:repeat(2,minmax(0,1fr)); }
+      .next-card { grid-row:span 2; }
+      .topbar { height:64px; }
+      .breadcrumb { display:none; }
+    }
+    @media (max-width: 620px) {
+      .topbar { padding:0 14px;gap:8px; }
+      .topbar-left { min-width:32px; }
+      .topbar-actions { gap:7px; }
+      .global-search { width:36px; }
+      .global-search input { width:36px;padding:0 0 0 34px;border-color:transparent;background:transparent;transition:width .2s; }
+      .global-search input:focus { position:absolute;right:0;top:0;width:min(245px,65vw);padding-right:10px;border-color:#dfe7df;background:#fff;z-index:3; }
+      .global-search .search-shortcut { display:none; }
+      .role-button { gap:5px; }
+      .role-button .avatar { width:31px;height:31px; }
+      .role-name,.role-label { display:none; }
+      .content { padding:23px 14px 36px; }
+      .kanban-intro { align-items:flex-start;flex-direction:column;gap:5px;padding:12px 13px 0; }
+      .kanban-board { min-height:360px;padding:10px; }
+      .kanban-lane { flex-basis:158px; }
+      .kanban-lane.queue-lane { flex-basis:194px; }
+      .page-heading { align-items:flex-start;flex-direction:column;margin-bottom:18px; }
+      .heading-actions { width:100%; }
+      .heading-actions .btn-primary { flex:1; }
+      h1 { font-size:27px; }
+      .metric-grid { grid-template-columns:repeat(2,minmax(0,1fr));gap:9px; }
+      .metric-card { min-height:103px;padding:13px; }
+      .metric-value { font-size:20px; }
+      .metric-label { font-size:9px; }
+      .metric-icon { width:26px;height:26px; }
+      .side-stack { grid-template-columns:1fr; }
+      .next-card { grid-row:auto; }
+      .calendar-toolbar { flex-wrap:wrap;padding:12px; }
+      .calendar-nav { flex:1; }
+      .date-main { font-size:9px; }
+      .calendar-legend { gap:8px;padding-left:13px;font-size:7px; }
+      .agenda-list { padding:7px 9px 10px; }
+      .appointment-row { grid-template-columns:44px minmax(0,1fr);gap:6px; }
+      .appointment-card { padding:9px 8px;gap:8px; }
+      .client-avatar { width:30px;height:30px; }
+      .appt-client { font-size:9px; }
+      .appt-service { max-width:155px;font-size:8px; }
+      .status-pill { padding:4px 5px;font-size:7px; }
+      .page-toolbar { align-items:flex-start;flex-direction:column; }
+      .page-toolbar .toolbar-left { width:100%; }
+      .search-box { width:100%; }
+      .table-card { overflow-x:auto; }
+      .data-table { min-width:700px; }
+      .data-table th,.data-table td { padding:11px 12px; }
+      .summary-banner { align-items:flex-start;flex-direction:column; }
+      .form-grid { grid-template-columns:1fr; }
+      .form-field.full { grid-column:auto; }
+      .modal-backdrop { padding:10px; }
+      .modal-header { padding:17px 17px 14px; }
+      .modal-body { padding:16px 17px 18px; }
+      .payment-row { grid-template-columns:1fr 105px 29px; }
+      .filter-tabs { max-width:100%;overflow:auto; }
+    }
+    body.auth-required { background:#f5f7f4; }
+    body.auth-required .sidebar,body.auth-required .main-area { display:none !important; }
+    .auth-root { position:fixed;inset:0;z-index:100;display:grid;place-items:center;padding:20px;background:radial-gradient(circle at 15% 10%,#eef2e9 0,transparent 32%),#f7f8f6; }
+    .auth-root[hidden] { display:none !important; }
+    .auth-card { width:min(100%,440px);padding:34px;border:1px solid #e6e9e3;border-radius:20px;background:#fff;box-shadow:0 25px 70px rgba(31,55,45,.1); }
+    .auth-brand { margin-bottom:26px;color:#44634d;font:600 12px Georgia,serif;letter-spacing:.4px; }
+    .auth-brand span { color:#b99c6d; }
+    .auth-card h1 { margin:0;color:#2f4338;font:500 27px Georgia,serif; }
+    .auth-card .auth-subtitle { margin:8px 0 22px;color:#829087;font-size:12px;line-height:1.6; }
+    .auth-card .form-field { margin-bottom:13px; }
+    .auth-card .form-field label { font-size:10px; }
+    .auth-card .form-field input { min-height:42px;font-size:13px; }
+    .auth-card .btn-primary { width:100%;justify-content:center;min-height:42px;margin-top:8px; }
+    .auth-switch { margin:18px 0 0;color:#839088;text-align:center;font-size:11px; }
+    .auth-switch button { border:0;background:none;color:#526e59;font:inherit;font-weight:700;font-size:11px;cursor:pointer; }
+    .auth-error { margin:0 0 14px;padding:10px 12px;border:1px solid #efd9d4;border-radius:10px;background:#fbf2ef;color:#9d5b4c;font-size:11px;line-height:1.5; }
+    .auth-note { margin-top:14px;color:#9aa49d;text-align:center;font-size:10px;line-height:1.5; }
+    .auth-loading { color:#718077;text-align:center;font-size:12px; }
+  </style>
+</head>
+<body>
+  <div class="mobile-overlay" id="mobileOverlay"></div>
+  <aside class="sidebar" id="sidebar">
+    <div class="brand">
+      <div class="brand-mark"><svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3c1.1 3.3 2.8 5 6 6-3.2 1-4.9 2.8-6 6-1.1-3.2-2.8-5-6-6 3.2-1 4.9-2.7 6-6Z"/><path d="M18.5 15c.5 1.4 1.1 2 2.5 2.5-1.4.5-2 1.1-2.5 2.5-.5-1.4-1.1-2-2.5-2.5 1.4-.5 2-1.1 2.5-2.5Z"/><path d="M5 16c.4 1.1.9 1.6 2 2-.1.1-1.6.7-2 2-.4-1.3-.9-1.8-2-2 1.1-.4 1.6-.9 2-2Z"/></svg></div>
+      <div><div class="brand-word">Espaço <span>Bruna Alves</span></div><span class="brand-caption">GESTÃO INTEGRADA</span></div>
+    </div>
+    <button class="branch-switch" type="button" aria-label="Selecionar unidade">
+      <span class="branch-meta"><span class="branch-pin"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M20 10c0 5-8 12-8 12S4 15 4 10a8 8 0 1 1 16 0Z"/><circle cx="12" cy="10" r="2.5"/></svg></span><span id="currentBranchName">Unidade principal</span></span>
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="m7 10 5 5 5-5"/></svg>
+    </button>
+    <div class="nav-section">Operação</div>
+    <nav class="nav-list" aria-label="Navegação principal">
+      <button class="nav-link active" data-page="agenda"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M16 3v4M8 3v4M3 10h18"/></svg>Agenda <span class="nav-badge">4</span></button>
+      <button class="nav-link" data-page="clientes"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg>Clientes</button>
+      <button class="nav-link" data-page="servicos"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="6" cy="6" r="3"/><path d="m8.1 8.1 12.8 12.8M6 21a3 3 0 1 0 0-6 3 3 0 0 0 0 6Zm0-6L20.9 2.1"/></svg>Serviços</button>
+    </nav>
+    <div class="nav-section">Gestão</div>
+    <nav class="nav-list" aria-label="Gestão">
+      <button class="nav-link" data-page="estoque"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="m12 3 9 5-9 5-9-5 9-5Z"/><path d="m3 12 9 5 9-5M3 16l9 5 9-5M12 13v8"/></svg>Estoque <span class="nav-badge">2</span></button>
+      <button class="nav-link" data-page="financeiro" data-admin-only="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="m19 9-5 5-4-4-5 5"/><path d="M16 9h3v3"/></svg>Financeiro</button>
+      <button class="nav-link" data-page="comissoes"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M16 8h-5.5a2.5 2.5 0 0 0 0 5H13a2.5 2.5 0 0 1 0 5H8M12 6v2m0 10v2"/></svg>Comissões</button>
+    </nav>
+    <div class="sidebar-spacer"></div>
+    <div class="sidebar-help"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><path d="M9.5 9a2.5 2.5 0 1 1 4.5 1.5c-1.2 1-2 1.5-2 3M12 17h.01"/></svg><div><strong>Precisa de ajuda?</strong><small>Fale com nosso suporte</small></div></div>
+    <div class="sidebar-user"><div class="avatar" id="sideAvatar">MC</div><div class="user-details"><strong id="sideUserName">Bruna Alves</strong><span id="sideUserRole">Administradora</span></div><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#91a69a" stroke-width="1.7"><circle cx="12" cy="5" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="12" cy="19" r="1"/></svg></div>
+  </aside>
+  <main class="main-area">
+    <header class="topbar">
+      <div class="topbar-left"><button class="mobile-menu" data-action="toggle-sidebar" aria-label="Abrir menu"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M4 6h16M4 12h16M4 18h16"/></svg></button><div class="breadcrumb">ESPAÇO BRUNA ALVES <span style="padding:0 7px;color:#c5cdc7">/</span><b id="breadcrumbPage">AGENDA</b></div></div>
+      <div class="topbar-actions">
+        <label class="global-search"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/></svg><input id="globalSearch" type="search" placeholder="Buscar cliente, serviço..." aria-label="Buscar"><span class="search-shortcut">⌘ K</span></label>
+        <button class="icon-button" data-action="notifications" aria-label="Notificações"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9M10 21h4"/></svg><span class="notification-dot"></span></button>
+        <div class="role-wrap"><button class="role-button" data-action="toggle-role-menu" aria-label="Alternar perfil"><div class="avatar" id="topAvatar">MC</div><span><span class="role-name" id="topUserName">Bruna Alves</span><span class="role-label" id="topUserRole">Administradora</span></span><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#8e9b93" stroke-width="1.8"><path d="m7 10 5 5 5-5"/></svg></button><div class="role-menu" id="roleMenu" hidden><p>Visualizar como</p><button class="role-option selected" data-role="Administrador"><span>✦</span>Administrador</button><button class="role-option" data-role="Profissional"><span>◉</span>Profissional</button><button class="role-option" data-role="Recepcionista"><span>▣</span>Recepcionista</button><button class="role-option" data-action="auth-logout" hidden><span>↪</span>Sair da conta</button></div></div>
+      </div>
+    </header>
+    <section class="content" id="pageContent" aria-live="polite"></section>
+  </main>
+  <div id="modalRoot"></div>
+  <div class="toast-container" id="toastContainer" aria-live="polite"></div>
+  <div class="auth-root" id="authRoot" hidden></div>
+<script type="module">
+  import { createClient } from '@supabase/supabase-js';
+
+  const supabaseUrl = import.meta.env?.VITE_SUPABASE_URL;
+  const supabaseAnonKey = import.meta.env?.VITE_SUPABASE_ANON_KEY;
+  const supabaseClient = supabaseUrl && supabaseAnonKey
+    ? createClient(supabaseUrl, supabaseAnonKey, { auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true } })
+    : null;
+  const icons = {
+    calendar:'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M16 3v4M8 3v4M3 10h18"/></svg>',
+    people:'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg>',
+    check:'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12 4 4L19 6"/></svg>',
+    plus:'<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>',
+    arrow:'<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14m-6-6 6 6-6 6"/></svg>',
+    clock:'<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>',
+    wallet:'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M20 8V5a2 2 0 0 0-2-2H5a3 3 0 0 0 0 6h16v10a2 2 0 0 1-2 2H5a3 3 0 0 1-3-3V6"/><path d="M20 14h-4a2 2 0 0 0 0 4h4v-4Z"/></svg>',
+    spark:'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="m12 3 1.9 5.8L20 11l-6.1 2.2L12 19l-1.9-5.8L4 11l6.1-2.2L12 3Z"/><path d="m19 15 1 2.5 2.5 1-2.5 1L19 22l-1-2.5-2.5-1 2.5-1L19 15Z"/></svg>',
+    box:'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="m12 3 9 5-9 5-9-5 9-5Z"/><path d="m3 12 9 5 9-5M3 16l9 5 9-5"/></svg>',
+    search:'<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/></svg>',
+    download:'<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>',
+    alert:'<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="m10.3 3.9-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.7-3.1l-8-14a2 2 0 0 0-3.4 0Z"/><path d="M12 9v4m0 4h.01"/></svg>'
+  };
+  const state = {
+    page:'agenda', role:'Administrador', date:new Date(), calendarView:'day', inventoryTab:'Uso interno',
+    clientQuery:'', selectedAppointment:null, kanbanSelected:null,
+    supabaseMode:Boolean(supabaseClient), authenticated:false, session:null, businessId:null, branchId:null,
+    branchName:'Unidade principal', timeZone:'America/Sao_Paulo', currentProfessionalId:null,
+    services:[], professionals:[], authView:'login',
+    clients:[
+      {id:1,name:'Camila Nunes',phone:'(11) 99842-1067',email:'camila.nunes@email.com',last:'Coloração + corte',lastDate:'06 out, 2026',next:'Hoje, 09:00',tag:'VIP',initials:'CN',tone:1,allergy:'Atenção: sensibilidade a amônia',formula:'7.1 + 8.0 · Ox. 20 vol · 35 min',visits:18},
+      {id:2,name:'Bianca Almeida',phone:'(11) 99173-8820',email:'bianca.a@email.com',last:'Escova modelada',lastDate:'28 set, 2026',next:'Hoje, 09:30',tag:'Recorrente',initials:'BA',tone:2,allergy:'Nenhuma informada',formula:'Luzes: 9.13 + tonalizante pérola',visits:12},
+      {id:3,name:'Luiza Martins',phone:'(11) 99774-2105',email:'luiza.m@email.com',last:'Manicure em gel',lastDate:'22 set, 2026',next:'Hoje, 10:30',tag:'Nova cliente',initials:'LM',tone:3,allergy:'Alergia a látex',formula:'—',visits:2},
+      {id:4,name:'Helena Prado',phone:'(11) 98914-0083',email:'helena.prado@email.com',last:'Design de sobrancelha',lastDate:'18 set, 2026',next:'Qui, 15 out',tag:'Recorrente',initials:'HP',tone:4,allergy:'Nenhuma informada',formula:'—',visits:9},
+      {id:5,name:'Mariana Lopes',phone:'(11) 99611-3472',email:'mariana.l@email.com',last:'Hidratação + corte',lastDate:'12 set, 2026',next:'Sex, 16 out',tag:'Aniversariante',initials:'ML',tone:2,allergy:'Sensibilidade a fragrâncias',formula:'Castanho frio 5.1',visits:7},
+      {id:6,name:'Isabela Rocha',phone:'(11) 99328-6184',email:'isabela.r@email.com',last:'Pedicure spa',lastDate:'08 set, 2026',next:'—',tag:'Recorrente',initials:'IR',tone:1,allergy:'Nenhuma informada',formula:'—',visits:15},
+      {id:7,name:'Fernanda Oliveira',phone:'(11) 99510-4428',email:'fernanda.o@email.com',last:'Corte feminino',lastDate:'02 out, 2026',next:'—',tag:'Recorrente',initials:'FO',tone:3,allergy:'Nenhuma informada',formula:'—',visits:5},
+      {id:8,name:'Laura Mendes',phone:'(11) 98231-7702',email:'laura.m@email.com',last:'Manicure em gel',lastDate:'29 set, 2026',next:'—',tag:'Recorrente',initials:'LM',tone:4,allergy:'Sensibilidade a acetona',formula:'—',visits:8},
+      {id:9,name:'Gabriela Souza',phone:'(11) 99771-1220',email:'gabriela.s@email.com',last:'Hidratação profunda',lastDate:'25 set, 2026',next:'—',tag:'VIP',initials:'GS',tone:2,allergy:'Nenhuma informada',formula:'—',visits:11}
+    ],
+    appointments:[
+      {id:101,time:'09:00',end:'10:00',client:'Camila Nunes',service:'Corte + escova',professional:'Marina Costa',status:'Confirmado',amount:180,initials:'CN',tone:1},
+      {id:102,time:'09:30',end:'11:00',client:'Bianca Almeida',service:'Coloração + tratamento',professional:'Paula Mendes',status:'Em atendimento',amount:390,initials:'BA',tone:2},
+      {id:103,time:'10:30',end:'11:30',client:'Luiza Martins',service:'Manicure em gel',professional:'Júlia Freitas',status:'Agendado',amount:145,initials:'LM',tone:3},
+      {id:104,time:'12:30',end:'13:30',client:'Isabela Rocha',service:'Hidratação profunda',professional:'Marina Costa',status:'Confirmado',amount:220,initials:'IR',tone:4},
+      {id:105,time:'13:30',end:'14:30',client:'Helena Prado',service:'Design de sobrancelha',professional:'Paula Mendes',status:'Agendado',amount:95,initials:'HP',tone:3},
+      {id:106,time:'14:00',end:'15:30',client:'Mariana Lopes',service:'Mechas + tonalização',professional:'Júlia Freitas',status:'Confirmado',amount:520,initials:'ML',tone:2},
+      {id:107,time:'15:30',end:'16:30',client:'Ana Beatriz Lima',service:'Escova modelada',professional:'Marina Costa',status:'Finalizado',amount:120,initials:'AL',tone:1},
+      {id:108,time:'16:30',end:'17:30',client:'Sofia Carvalho',service:'Corte feminino',professional:'Paula Mendes',status:'Agendado',amount:160,initials:'SC',tone:4}
+    ],
+    waitlist:[
+      {id:201,clientId:7,service:'Corte feminino',preference:'Manhã',preferredProfessional:''},
+      {id:202,clientId:8,service:'Manicure em gel',preference:'Qualquer horário',preferredProfessional:''},
+      {id:203,clientId:9,service:'Hidratação profunda',preference:'Tarde',preferredProfessional:'Marina Costa'}
+    ],
+    products:[
+      {name:'Coloração profissional 7.1',sku:'COL-071',type:'Uso interno',stock:2.4,unit:'tubos',minimum:4,cost:38.5,initials:'7.1'},
+      {name:'Oxidante 20 volumes',sku:'OXI-020',type:'Uso interno',stock:1.2,unit:'L',minimum:2,cost:29.9,initials:'20'},
+      {name:'Shampoo nutritivo 300 ml',sku:'HOM-113',type:'Revenda',stock:3,unit:'un',minimum:5,cost:32.9,price:69.9,initials:'SN'},
+      {name:'Máscara reconstrutora 250 g',sku:'HOM-208',type:'Revenda',stock:8,unit:'un',minimum:4,cost:41,price:89.9,initials:'MR'},
+      {name:'Pó descolorante azul',sku:'COL-031',type:'Uso interno',stock:7,unit:'un',minimum:3,cost:56,initials:'PA'},
+      {name:'Óleo finalizador 60 ml',sku:'HOM-052',type:'Revenda',stock:2,unit:'un',minimum:4,cost:28,price:59.9,initials:'OF'}
+    ]
+  };
+  const demoServiceOptions=[
+    {name:'Corte feminino',duration:45,price:145},
+    {name:'Corte + escova',duration:60,price:180},
+    {name:'Coloração + tratamento',duration:120,price:390},
+    {name:'Manicure em gel',duration:60,price:145},
+    {name:'Hidratação profunda',duration:60,price:220},
+    {name:'Design de sobrancelha',duration:30,price:95},
+    {name:'Escova modelada',duration:60,price:120},
+    {name:'Mechas + tonalização',duration:90,price:520}
+  ];
+  const money = n => new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'}).format(Number(n)||0);
+  const initials = name => name.split(' ').filter(Boolean).slice(0,2).map(s=>s[0]).join('').toUpperCase();
+  const dateFmt = (date, opts={weekday:'long',day:'numeric',month:'long',year:'numeric'}) => new Intl.DateTimeFormat('pt-BR',opts).format(date);
+  const safe = s => String(s ?? '').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  function dateKeyInZone(date,timeZone=state.timeZone){
+    const parts=Object.fromEntries(new Intl.DateTimeFormat('en-CA',{timeZone,year:'numeric',month:'2-digit',day:'2-digit'}).formatToParts(date).map(part=>[part.type,part.value]));
+    return `${parts.year}-${parts.month}-${parts.day}`;
+  }
+  function shiftDateKey(key,days){const [y,m,d]=key.split('-').map(Number);return new Date(Date.UTC(y,m-1,d+days)).toISOString().slice(0,10);}
+  function zonedDateTimeToIso(dateKey,time,timeZone=state.timeZone){
+    const [year,month,day]=dateKey.split('-').map(Number);const [hour,minute]=time.split(':').map(Number);const target=Date.UTC(year,month-1,day,hour,minute,0);let guess=target;
+    for(let i=0;i<4;i++){
+      const parts=Object.fromEntries(new Intl.DateTimeFormat('en-CA',{timeZone,year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',second:'2-digit',hourCycle:'h23'}).formatToParts(new Date(guess)).map(part=>[part.type,part.value]));
+      const represented=Date.UTC(Number(parts.year),Number(parts.month)-1,Number(parts.day),Number(parts.hour),Number(parts.minute),Number(parts.second));const next=guess+(target-represented);if(next===guess)break;guess=next;
+    }
+    return new Date(guess).toISOString();
+  }
+  const timeInZone=(iso,timeZone=state.timeZone)=>new Intl.DateTimeFormat('pt-BR',{timeZone,hour:'2-digit',minute:'2-digit',hourCycle:'h23'}).format(new Date(iso));
+  const dbStatusToUi={scheduled:'Agendado',confirmed:'Confirmado',in_service:'Em atendimento',completed:'Finalizado',no_show:'Faltou',cancelled:'Cancelado'};
+  function renderAuthGate(view='login',message=''){
+    state.authView=view;document.body.classList.add('auth-required');const root=document.getElementById('authRoot');root.hidden=false;
+    const alert=message?`<div class="auth-error" role="alert">${safe(message)}</div>`:'';
+    const header=`<div class="auth-brand">ESPAÇO <span>BRUNA ALVES</span></div>`;
+    if(view==='loading'){root.innerHTML=`<div class="auth-card"><div class="auth-brand">ESPAÇO <span>BRUNA ALVES</span></div><p class="auth-loading">Conectando ao Espaço Bruna Alves…</p></div>`;return;}
+    if(view==='login'||view==='signup'){
+      const signup=view==='signup';root.innerHTML=`<div class="auth-card">${header}<h1>${signup?'Criar acesso':'Bem-vinda de volta'}</h1><p class="auth-subtitle">${signup?'Crie o acesso da pessoa administradora do Espaço Bruna Alves.':'Entre para acessar a agenda e os dados autorizados da sua empresa.'}</p>${alert}<form id="authForm" data-mode="${view}">${signup?'<div class="form-field"><label>Nome completo</label><input name="fullName" autocomplete="name" required maxlength="100"></div>':''}<div class="form-field"><label>E-mail</label><input name="email" type="email" autocomplete="email" required></div><div class="form-field"><label>Senha</label><input name="password" type="password" autocomplete="${signup?'new-password':'current-password'}" minlength="8" required></div><button class="btn btn-primary" type="submit">${signup?'Criar conta':'Entrar'}</button></form><p class="auth-switch">${signup?'Já tem acesso?':'Ainda não tem acesso?'} <button type="button" data-action="auth-mode-${signup?'login':'signup'}">${signup?'Entrar':'Criar conta'}</button></p><p class="auth-note">A senha é enviada diretamente ao Supabase Auth e não é armazenada pelo protótipo.</p></div>`;return;
+    }
+    if(view==='confirm'){
+      root.innerHTML=`<div class="auth-card">${header}<h1>Confirme seu e-mail</h1><p class="auth-subtitle">${safe(message||'Enviamos um link de confirmação. Abra o e-mail e depois volte para entrar.')}</p><button type="button" class="btn btn-primary" data-action="auth-mode-login">Voltar ao login</button><p class="auth-note">Se não encontrar a mensagem, confira a pasta de spam.</p></div>`;return;
+    }
+    if(view==='business'){
+      root.innerHTML=`<div class="auth-card">${header}<h1>Configure sua empresa</h1><p class="auth-subtitle">Este acesso ainda não está vinculado a uma empresa. Vamos cadastrar o espaço e a unidade principal.</p>${alert}<form id="businessSetupForm"><div class="form-field"><label>Nome da empresa</label><input name="businessName" value="Espaço Bruna Alves" required maxlength="140"></div><div class="form-field"><label>Identificador (slug)</label><input name="slug" value="espaco-bruna-alves" pattern="[a-z0-9]+(-[a-z0-9]+)*" required maxlength="80"></div><div class="form-field"><label>Nome da unidade</label><input name="branchName" value="Unidade principal" required maxlength="100"></div><button class="btn btn-primary" type="submit">Criar empresa e continuar</button></form><p class="auth-note">A primeira conta criada neste espaço receberá o papel de administradora.</p></div>`;return;
+    }
+    if(view==='catalog'){
+      root.innerHTML=`<div class="auth-card">${header}<h1>Configuração inicial</h1><p class="auth-subtitle">Cadastre um profissional e um serviço real para habilitar os primeiros agendamentos.</p>${alert}<form id="catalogSetupForm"><div class="form-field"><label>Nome do primeiro profissional</label><input name="professionalName" value="${safe(state.currentName||'')}" required maxlength="100"></div><div class="form-field"><label>Primeiro serviço</label><input name="serviceName" placeholder="Ex.: Corte feminino" required maxlength="100"></div><div class="form-grid" style="grid-template-columns:1fr 1fr"><div class="form-field"><label>Duração (minutos)</label><input name="duration" type="number" min="5" max="1440" step="5" value="60" required></div><div class="form-field"><label>Preço (R$)</label><input name="price" type="number" min="0" step="0.01" placeholder="150,00" required></div></div><button class="btn btn-primary" type="submit">Salvar e abrir agenda</button></form><p class="auth-note">Você poderá cadastrar outros serviços e profissionais depois.</p></div>`;return;
+    }
+    root.innerHTML=`<div class="auth-card">${header}<h1>Não foi possível conectar</h1>${alert}<button type="button" class="btn btn-primary" data-action="auth-retry">Tentar novamente</button></div>`;
+  }
+  async function bootApplication(){
+    if(!supabaseClient){
+      if(import.meta.env.DEV&&new URLSearchParams(window.location.search).get('demo')==='1'){state.supabaseMode=false;document.body.classList.remove('auth-required');document.getElementById('authRoot').hidden=true;render();return;}
+      state.supabaseMode=true;renderAuthGate('issue','Supabase não configurado. Defina VITE_SUPABASE_URL e VITE_SUPABASE_ANON_KEY para habilitar os dados reais.');return;
+    }
+    state.supabaseMode=true;renderAuthGate('loading');
+    const {data,error}=await supabaseClient.auth.getSession();
+    if(error){renderAuthGate('login','Falha ao iniciar sessão: '+error.message);return;}
+    if(data.session)await loadAuthenticatedWorkspace(data.session);else renderAuthGate('login');
+    supabaseClient.auth.onAuthStateChange((event)=>{if(event==='SIGNED_OUT'){state.authenticated=false;state.session=null;state.businessId=null;state.branchId=null;state.clients=[];state.appointments=[];state.waitlist=[];renderAuthGate('login');}});
+  }
+  async function loadAuthenticatedWorkspace(session){
+    state.session=session;
+    const profileResult=await supabaseClient.from('profiles').select('display_name').eq('id',session.user.id).maybeSingle();
+    if(profileResult.error){renderAuthGate('login','Não foi possível carregar o perfil: '+profileResult.error.message);return;}
+    state.currentName=profileResult.data?.display_name||session.user.user_metadata?.full_name||session.user.email?.split('@')[0]||'Administradora';
+    const memberResult=await supabaseClient.from('business_memberships').select('business_id,role,branch_id,professional_id').eq('user_id',session.user.id).limit(20);
+    if(memberResult.error){renderAuthGate('login','Não foi possível carregar as permissões: '+memberResult.error.message);return;}
+    if(!memberResult.data?.length){renderAuthGate('business');return;}
+    const membership=memberResult.data.find(item=>item.role==='admin')||memberResult.data[0];
+    const branchResult=await supabaseClient.from('branches').select('id,name,timezone').eq('business_id',membership.business_id).eq('active',true).order('name');
+    if(branchResult.error||!branchResult.data?.length){renderAuthGate('issue',branchResult.error?.message||'Nenhuma unidade ativa foi encontrada.');return;}
+    const branch=membership.branch_id?branchResult.data.find(item=>item.id===membership.branch_id):branchResult.data[0];
+    if(!branch){renderAuthGate('issue','Sua conta não tem acesso à unidade selecionada.');return;}
+    state.businessId=membership.business_id;state.branchId=branch.id;state.branchName=branch.name;state.timeZone=branch.timezone||'America/Sao_Paulo';state.currentProfessionalId=membership.professional_id||null;
+    state.role=membership.role==='admin'?'Administrador':membership.role==='receptionist'?'Recepcionista':'Profissional';state.authenticated=true;
+    state.date=new Date();state.appointments=[];state.waitlist=[];state.clients=[];state.products=[];
+    try{await loadSupabaseAgenda();}catch(error){state.authenticated=false;renderAuthGate('issue',error.message||'Falha ao carregar os dados.');return;}
+    document.body.classList.remove('auth-required');document.getElementById('authRoot').hidden=true;render();
+  }
+  async function createFirstBusiness(form){
+    const data=new FormData(form);const name=String(data.get('businessName')||'').trim();const slug=String(data.get('slug')||'').trim().toLowerCase();const branchName=String(data.get('branchName')||'').trim();
+    if(!/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(slug)){renderAuthGate('business','Use somente letras minúsculas, números e hífens no identificador.');return;}
+    const {data:businessId,error}=await supabaseClient.rpc('create_first_business',{p_name:name,p_slug:slug,p_branch_name:branchName});
+    if(error){renderAuthGate('business',error.message);return;}
+    state.pendingBusinessId=businessId;
+    const {data:branches,error:branchError}=await supabaseClient.from('branches').select('id').eq('business_id',businessId).eq('active',true).limit(1);
+    if(branchError||!branches?.length){renderAuthGate('business',branchError?.message||'Empresa criada, mas não foi possível localizar a unidade.');return;}
+    state.pendingBranchId=branches[0].id;renderAuthGate('catalog');
+  }
+  async function createInitialCatalog(form){
+    const data=new FormData(form);const professionalName=String(data.get('professionalName')||'').trim();const serviceName=String(data.get('serviceName')||'').trim();const duration=Number(data.get('duration'));const price=Number(data.get('price'));
+    if(!state.pendingBusinessId||!state.pendingBranchId){renderAuthGate('business','Sessão de configuração expirada. Entre novamente para continuar.');return;}
+    let proResult=await supabaseClient.from('professionals').select('id').eq('business_id',state.pendingBusinessId).eq('display_name',professionalName).limit(1).maybeSingle();
+    if(proResult.error){renderAuthGate('catalog',proResult.error.message);return;}
+    let professionalId=proResult.data?.id;
+    if(!professionalId){const inserted=await supabaseClient.from('professionals').insert({business_id:state.pendingBusinessId,display_name:professionalName}).select('id').single();if(inserted.error){renderAuthGate('catalog',inserted.error.message);return;}professionalId=inserted.data.id;}
+    let serviceResult=await supabaseClient.from('services').select('id').eq('business_id',state.pendingBusinessId).eq('name',serviceName).limit(1).maybeSingle();
+    if(serviceResult.error){renderAuthGate('catalog',serviceResult.error.message);return;}
+    let serviceId=serviceResult.data?.id;
+    if(!serviceId){const inserted=await supabaseClient.from('services').insert({business_id:state.pendingBusinessId,name:serviceName,duration_minutes:duration,default_price:price}).select('id').single();if(inserted.error){renderAuthGate('catalog',inserted.error.message);return;}serviceId=inserted.data.id;}
+    const branchAssignment=await supabaseClient.from('professional_branches').upsert({business_id:state.pendingBusinessId,professional_id:professionalId,branch_id:state.pendingBranchId,active:true},{onConflict:'professional_id,branch_id'});
+    if(branchAssignment.error){renderAuthGate('catalog',branchAssignment.error.message);return;}
+    const serviceAssignment=await supabaseClient.from('professional_services').upsert({business_id:state.pendingBusinessId,professional_id:professionalId,service_id:serviceId,active:true},{onConflict:'professional_id,service_id'});
+    if(serviceAssignment.error){renderAuthGate('catalog',serviceAssignment.error.message);return;}
+    state.pendingBusinessId=null;state.pendingBranchId=null;await loadAuthenticatedWorkspace(state.session);
+  }
+  async function loadSupabaseAgenda(){
+    const businessId=state.businessId,branchId=state.branchId;
+    const [serviceResult,proResult,clientResult]=await Promise.all([
+      supabaseClient.from('services').select('id,name,duration_minutes,default_price').eq('business_id',businessId).eq('active',true).order('name').limit(500),
+      supabaseClient.from('professionals').select('id,display_name').eq('business_id',businessId).eq('active',true).order('display_name').limit(500),
+      supabaseClient.from('clients').select('id,name,phone_e164,email,birth_date,notes,created_at').eq('business_id',businessId).order('name').limit(1000)
+    ]);
+    for(const result of [serviceResult,proResult,clientResult])if(result.error)throw new Error(result.error.message);
+    state.services=serviceResult.data.map((item,index)=>({id:index+1,backendId:item.id,name:item.name,duration:Number(item.duration_minutes),price:Number(item.default_price)}));
+    state.professionals=proResult.data.map((item,index)=>({id:index+1,backendId:item.id,name:item.display_name}));
+    state.clients=clientResult.data.map((item,index)=>({id:index+1,backendId:item.id,name:item.name,phone:item.phone_e164,email:item.email||'—',last:'—',lastDate:'—',next:'—',tag:'Cliente',initials:initials(item.name),tone:index%4+1,allergy:'Nenhuma informada',formula:'—',visits:0,birthDate:item.birth_date,notes:item.notes}));
+    const clientByBackend=new Map(state.clients.map(item=>[item.backendId,item]));const serviceByBackend=new Map(state.services.map(item=>[item.backendId,item]));const proByBackend=new Map(state.professionals.map(item=>[item.backendId,item]));
+    const dateKey=dateKeyInZone(state.date,state.timeZone);const startIso=zonedDateTimeToIso(dateKey,'00:00');const endIso=zonedDateTimeToIso(shiftDateKey(dateKey,1),'00:00');
+    const lineResult=await supabaseClient.from('appointment_services').select('id,appointment_id,service_id,professional_id,starts_at,ends_at,status,duration_snapshot,price_snapshot').eq('business_id',businessId).eq('branch_id',branchId).gte('starts_at',startIso).lt('starts_at',endIso).order('starts_at');
+    if(lineResult.error)throw new Error(lineResult.error.message);
+    const lineRows=lineResult.data||[];const appointmentIds=[...new Set(lineRows.map(item=>item.appointment_id))];let parentRows=[];
+    if(appointmentIds.length){const parentResult=await supabaseClient.from('appointments').select('id,client_id,status,notes').eq('business_id',businessId).eq('branch_id',branchId).in('id',appointmentIds);if(parentResult.error)throw new Error(parentResult.error.message);parentRows=parentResult.data||[];}
+    const parentById=new Map(parentRows.map(item=>[item.id,item]));
+    state.appointments=lineRows.map((item,index)=>{
+      const parent=parentById.get(item.appointment_id);const client=parent&&clientByBackend.get(parent.client_id);const service=serviceByBackend.get(item.service_id);const professional=proByBackend.get(item.professional_id);
+      if(!parent||!client||!service||!professional)return null;
+      return {id:1000+index,backendId:parent.id,serviceLineBackendId:item.id,startsAt:item.starts_at,clientId:client.id,client:client.name,serviceId:service.id,serviceBackendId:service.backendId,service:service.name,professionalId:professional.id,professionalBackendId:professional.backendId,professional:professional.name,time:timeInZone(item.starts_at),end:timeInZone(item.ends_at),status:dbStatusToUi[item.status]||'Agendado',amount:Number(item.price_snapshot),initials:client.initials,tone:client.tone,notes:parent.notes||''};
+    }).filter(Boolean);
+    if(state.role==='Profissional')state.waitlist=[];
+    else{
+      const waitResult=await supabaseClient.from('waitlist_entries').select('id,client_id,service_id,preferred_professional_id,time_preference,notes,created_at').eq('business_id',businessId).eq('branch_id',branchId).eq('status','waiting').order('created_at');
+      if(waitResult.error)throw new Error(waitResult.error.message);
+      state.waitlist=(waitResult.data||[]).map((item,index)=>{const client=clientByBackend.get(item.client_id);const service=serviceByBackend.get(item.service_id);const pro=proByBackend.get(item.preferred_professional_id);if(!client||!service)return null;const pref={any:'Qualquer horário',morning:'Manhã',afternoon:'Tarde',evening:'Noite'}[item.time_preference]||'Qualquer horário';return{id:2000+index,backendId:item.id,clientId:client.id,clientBackendId:client.backendId,serviceId:service.id,serviceBackendId:service.backendId,service:service.name,preference:pref,preferredProfessional:pro?.name||'',preferredProfessionalId:pro?.id||null,preferredProfessionalBackendId:pro?.backendId||null,notes:item.notes||''};}).filter(Boolean);
+    }
+  }
+  async function refreshAgenda(){
+    if(state.supabaseMode&&state.authenticated){try{await loadSupabaseAgenda();}catch(error){toast('Falha ao atualizar agenda: '+error.message);return;}}
+    render();
+  }
+  function setRole(role){
+    if(state.supabaseMode){toast('O perfil real vem das permissões da sua conta.');return;}
+    state.role=role;
+    if(role==='Profissional') state.currentName='Marina Costa';
+    else if(role==='Recepcionista') state.currentName='Ana Oliveira';
+    else state.currentName='Bruna Alves';
+    if(role==='Recepcionista' && ['financeiro','comissoes','estoque'].includes(state.page)) state.page='agenda';
+    if(role==='Profissional' && ['financeiro','estoque'].includes(state.page)) state.page='agenda';
+    if(role==='Profissional' && state.calendarView==='kanban') state.calendarView='day';
+    render();
+    document.getElementById('roleMenu').hidden=true;
+    toast(`Visualização de ${role.toLowerCase()} ativada.`);
+  }
+  function render(){
+    const live=state.supabaseMode&&state.authenticated;
+    if(live&&['estoque','financeiro','comissoes'].includes(state.page))state.page='agenda';
+    if(live&&state.role==='Profissional'&&state.calendarView==='kanban')state.calendarView='day';
+    document.querySelectorAll('.nav-link').forEach(btn=>{
+      const pg=btn.dataset.page;btn.classList.toggle('active',pg===state.page);
+      const recepHidden=state.role==='Recepcionista'&&['estoque','financeiro','comissoes'].includes(pg);
+      const profHidden=state.role==='Profissional'&&['estoque','financeiro'].includes(pg);
+      const liveHidden=live&&['estoque','financeiro','comissoes'].includes(pg);
+      btn.style.display=(recepHidden||profHidden||liveHidden)?'none':'flex';
+    });
+    const who=state.currentName||(state.role==='Recepcionista'?'Ana Oliveira':state.role==='Administrador'?'Bruna Alves':'Marina Costa');
+    const roleLabel=state.role==='Administrador'?'Administradora':state.role;
+    const avatar=initials(who);
+    ['sideUserName','topUserName'].forEach(id=>document.getElementById(id).textContent=who);
+    ['sideUserRole','topUserRole'].forEach(id=>document.getElementById(id).textContent=roleLabel);
+    ['sideAvatar','topAvatar'].forEach(id=>document.getElementById(id).textContent=avatar);
+    const roleMenu=document.getElementById('roleMenu');
+    roleMenu.querySelector('p').textContent=live?'Sessão':'Visualizar como';
+    roleMenu.querySelectorAll('[data-role]').forEach(button=>button.hidden=live);
+    const logout=roleMenu.querySelector('[data-action="auth-logout"]');if(logout)logout.hidden=!live;
+    document.querySelectorAll('.role-option[data-role]').forEach(o=>o.classList.toggle('selected',o.dataset.role===state.role));
+    document.getElementById('currentBranchName').textContent=live?state.branchName:'Unidade principal';
+    const globalSearch=document.getElementById('globalSearch');if(globalSearch)globalSearch.placeholder=live?'Buscar cliente...':'Buscar cliente, serviço...';
+    const notifications=document.querySelector('[data-action="notifications"]');if(notifications)notifications.style.display=live?'none':'grid';
+    const pageNames={agenda:'AGENDA',clientes:'CLIENTES',servicos:'SERVIÇOS',estoque:'ESTOQUE',financeiro:'FINANCEIRO',comissoes:'COMISSÕES'};
+    document.getElementById('breadcrumbPage').textContent=pageNames[state.page]||'AGENDA';
+    const pages={agenda:renderAgenda,clientes:renderClients,servicos:renderServices,estoque:renderInventory,financeiro:renderFinance,comissoes:renderCommissions};
+    document.getElementById('pageContent').innerHTML=(pages[state.page]||renderAgenda)();
+    document.getElementById('mobileOverlay').classList.remove('visible');document.getElementById('sidebar').classList.remove('open');
+  }
+  function metric(label,value,foot,icon,style=''){
+    return `<div class="metric-card"><div class="metric-top"><span class="metric-label">${label}</span><span class="metric-icon ${style}">${icon}</span></div><div class="metric-value">${value}</div><div class="metric-foot">${foot}</div></div>`;
+  }
+  function renderWeekCalendar(list){
+    const monday=new Date(state.date);monday.setHours(0,0,0,0);monday.setDate(monday.getDate()-((monday.getDay()+6)%7));
+    const days=Array.from({length:5},()=>[]);
+    list.slice().sort((a,b)=>a.time.localeCompare(b.time)).forEach((appointment,index)=>days[index%5].push(appointment));
+    return `<div class="week-grid" id="weekGrid">${days.map((items,index)=>{const day=new Date(monday);day.setDate(monday.getDate()+index);return `<div class="week-day"><div class="week-day-head"><span>${dateFmt(day,{weekday:'short'})}</span><strong>${day.getDate()}</strong></div>${items.length?items.map(a=>`<button class="week-appointment ${a.status==='Em atendimento'?'service':a.status==='Finalizado'?'done':a.status==='Agendado'?'scheduled':''}" data-action="appointment" data-id="${a.id}"><time>${a.time} · ${safe(a.professional.split(' ')[0])}</time><strong>${safe(a.client)}</strong><small>${safe(a.service)}</small></button>`).join(''):'<div class="empty-state" style="padding:20px 4px;font-size:8px">Sem horários</div>'}</div>`}).join('')}</div>`;
+  }
+  function renderKanban(list){
+    const selected=state.kanbanSelected;
+    const queueCards=state.waitlist.map(item=>{
+      const client=state.clients.find(c=>c.id===item.clientId);
+      if(!client)return '';
+      const isSelected=selected?.type==='waitlist'&&selected.id===item.id;
+      return `<div class="kanban-card ${isSelected?'selected':''}" role="button" tabindex="0" draggable="true" data-action="kanban-card" data-type="waitlist" data-drag-type="waitlist" data-id="${item.id}" aria-label="Selecionar ${safe(client.name)} para agendamento"><div class="kanban-card-head"><span class="kanban-card-time">NA FILA</span><span class="kanban-card-state">Sem horário</span></div><strong>${safe(client.name)}</strong><small>${safe(item.service)}</small><div class="kanban-card-foot"><span>${safe(item.preference)}</span><em>Arraste →</em></div></div>`;
+    }).join('');
+    const hours=Array.from({length:10},(_,i)=>String(i+8).padStart(2,'0')+':00');
+    const lanes=hours.map(time=>{
+      const hour=Number(time.slice(0,2));
+      const items=list.filter(item=>Number(item.time.slice(0,2))===hour).sort((a,b)=>a.time.localeCompare(b.time));
+      const cards=items.map(item=>{
+        const isSelected=selected?.type==='appointment'&&selected.id===item.id;
+        const tone=item.status==='Em atendimento'?'in-service':item.status==='Finalizado'?'done':'';
+        return `<div class="kanban-card ${tone} ${isSelected?'selected':''}" role="button" tabindex="0" draggable="${state.role!=='Profissional'}" data-action="kanban-card" data-type="appointment" data-drag-type="appointment" data-id="${item.id}" aria-label="${safe(item.client)}, ${item.time}. Arraste para reagendar"><div class="kanban-card-head"><span class="kanban-card-time">${item.time}–${item.end}</span><span class="kanban-card-state">${safe(item.status)}</span></div><strong>${safe(item.client)}</strong><small>${safe(item.service)}</small><div class="kanban-card-foot"><span>${safe(item.professional.split(' ')[0])}</span><button type="button" data-action="appointment" data-id="${item.id}" style="border:0;background:none;color:#64806a;font-size:7px;font-weight:700;padding:0">Detalhes</button></div></div>`;
+      }).join('');
+      return `<section class="kanban-lane"><div class="kanban-lane-head"><strong>${time}</strong><span class="kanban-count">${items.length}</span></div><div class="kanban-dropzone" data-time="${time}" data-action="kanban-slot">${cards}${items.length?'':'<div class="kanban-empty-slot">'+(selected?'Solte ou toque para agendar':'Horário disponível')+'</div>'}</div></section>`;
+    }).join('');
+    return `<div class="kanban-intro"><strong>Arraste alguém da fila para um horário para agendar — ou mova um cartão para reagendar.</strong><span>No celular: toque no cartão e depois no horário desejado. A escolha é confirmada antes de salvar.</span></div><div class="kanban-board"><section class="kanban-lane queue-lane"><div class="kanban-lane-head"><div><strong>Fila de encaixe</strong><br><small>Clientes sem horário</small></div><span class="kanban-count">${state.waitlist.length}</span></div><div class="kanban-dropzone">${queueCards||'<div class="kanban-queue-empty">Fila vazia.<br>Adicione uma cliente para começar.</div>'}</div></section>${lanes}</div>`;
+  }
+  function renderAgenda(){ 
+    const own=state.role==='Profissional';const live=state.supabaseMode&&state.authenticated;
+    const list=state.appointments.filter(a=>!own||(live?a.professionalBackendId===state.currentProfessionalId:a.professional==='Marina Costa'));
+    const dateText=dateFmt(state.date,{weekday:'long',day:'numeric',month:'long'});
+    const scheduled=list.filter(a=>!['Finalizado','Faltou','Cancelado'].includes(a.status)).length;
+    const isAdmin=state.role==='Administrador';
+    const metrics=live?
+      (own?metric('Meus atendimentos',String(list.length).padStart(2,'0'),'na agenda do dia',icons.calendar)+metric('Próximo atendimento',list.find(a=>!['Finalizado','Faltou','Cancelado'].includes(a.status))?.time||'—','horário local da unidade',icons.clock,'peach')+metric('Serviços habilitados',String(state.services.length),'no seu perfil',icons.spark,'lavender')+metric('Situação',String(scheduled),'atendimentos em aberto',icons.check,'blue'):
+      metric('Atendimentos do dia',String(list.length).padStart(2,'0'),safe(dateText),icons.calendar)+metric('Na fila de encaixe',String(state.waitlist.length),'aguardando horário',icons.clock,'peach')+metric('Serviços ativos',String(state.services.length),'no catálogo',icons.spark,'lavender')+metric('Profissionais',String(state.professionals.length),'habilitados na unidade',icons.people,'blue')):
+      (own?metric('Meus atendimentos',String(list.length).padStart(2,'0'),'na agenda de hoje',icons.calendar)+metric('Comissão estimada',money(648),'com base na agenda',icons.spark,'peach')+metric('Atendimentos concluídos','03','neste mês',icons.check,'lavender')+metric('Ocupação da agenda','78%','+6% vs. semana passada',icons.clock,'blue'):
+      metric('Atendimentos hoje','08','<span class="trend-up">↑ 12%</span> vs. média semanal',icons.calendar)+metric('Faturamento previsto',money(1830),'<span class="trend-up">+8,4%</span> vs. ontem',icons.wallet,'peach')+metric(isAdmin?'Comissões do dia':'Comandas pendentes',isAdmin?money(428):'03',isAdmin?'estimativa da equipe':'aguardando fechamento',icons.spark,'lavender')+metric('Ocupação da agenda','82%','11 de 14 horários',icons.clock,'blue'));
+    const sortedList=list.slice().sort((a,b)=>a.time.localeCompare(b.time));
+    const apptRows=sortedList.map(a=>{
+      const statusClass=a.status==='Em atendimento'?'service':a.status==='Finalizado'?'done':a.status==='Agendado'?'scheduled':a.status==='Faltou'?'noshow':'';
+      const cardClass=a.status==='Em atendimento'?'status-service':a.status==='Finalizado'?'status-done':a.status==='Agendado'?'status-scheduled':'';
+      return `<div class="appointment-row" data-action="appointment" data-id="${a.id}" tabindex="0" role="button" aria-label="Abrir atendimento de ${safe(a.client)}"><div class="time-label">${a.time}<small>${a.end}</small></div><div class="appointment-card ${cardClass}"><div class="client-avatar tone-${a.tone}">${safe(a.initials)}</div><div class="appt-main"><div class="appt-client">${safe(a.client)}</div><div class="appt-service">${safe(a.service)}</div></div><div class="appt-professional">${safe(a.professional)}</div><span class="status-pill ${statusClass}">${safe(a.status)}</span></div></div>`;
+    }).join('');
+    const next=sortedList.find(a=>!['Finalizado','Faltou','Cancelado'].includes(a.status))||sortedList[0];
+    const palette=[['#e7ede6','#55705b'],['#f3e8df','#a77856'],['#e9e7f2','#766a99'],['#e6edf0','#607a86']];
+    const professionals=live?state.professionals.map((p,i)=>{const counts=state.appointments.filter(a=>a.professionalId===p.id).length;const colors=palette[i%palette.length];return[p.name,`${counts} atendimentos`,initials(p.name),colors[0],colors[1]];}):[['Marina Costa','3 atendimentos','MC','#e7ede6','#55705b'],['Paula Mendes','3 atendimentos','PM','#f3e8df','#a77856'],['Júlia Freitas','2 atendimentos','JF','#e9e7f2','#766a99']];
+    const staffOptions=live?state.professionals.map(p=>`<option value="${p.id}">${safe(p.name)}</option>`).join(''):'<option>Marina Costa</option><option>Paula Mendes</option><option>Júlia Freitas</option>';
+    return `<div class="page-heading"><div><div class="eyebrow"><span class="eyebrow-dot"></span>${safe(dateText)}</div><h1>Agenda</h1><p class="page-subtitle">${own?'Sua rotina de atendimentos, em um só lugar.':'Acompanhe o ritmo do seu espaço hoje.'}</p></div><div class="heading-actions">${state.role!=='Profissional'?('<button class="btn btn-primary" data-action="new-appointment">'+icons.plus+'Novo agendamento</button>'+(live?'':'<button class="btn" data-action="new-order">'+icons.wallet+'Nova comanda</button>')+(state.calendarView==='kanban'? '<button class="btn btn-soft" data-action="add-waitlist">'+icons.plus+'Adicionar à fila</button>':'')):''}</div></div>
+      <div class="metric-grid">${metrics}</div>
+      <div class="dashboard-grid"><section class="card"><div class="calendar-toolbar"><div class="calendar-nav"><button class="btn btn-icon" data-action="date-prev" aria-label="Dia anterior"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="m15 18-6-6 6-6"/></svg></button><button class="btn btn-sm" data-action="date-today">Hoje</button><button class="btn btn-icon" data-action="date-next" aria-label="Próximo dia"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="m9 18 6-6-6-6"/></svg></button><span class="date-main">${dateFmt(state.date,{day:'numeric',month:'long',year:'numeric'})}</span></div><div style="display:flex;align-items:center;gap:8px"><div class="view-switch"><button class="${state.calendarView==='day'?'active':''}" data-action="view-day">Dia</button>${live?'':`<button class="${state.calendarView==='week'?'active':''}" data-action="view-week">Semana</button>`}${own?'':`<button class="${state.calendarView==='kanban'?'active':''}" data-action="view-kanban">Kanban</button>`}</div>${own?'':`<select class="filter-select" id="staffFilter"><option value="all">Todos profissionais</option>${staffOptions}</select>`}</div></div><div class="calendar-legend"><span class="legend-item"><i class="legend-dot scheduled"></i>Agendado</span><span class="legend-item"><i class="legend-dot"></i>Confirmado</span><span class="legend-item"><i class="legend-dot in-service"></i>Em atendimento</span><span class="legend-item"><i class="legend-dot done"></i>Finalizado</span></div>${state.calendarView==='week'?renderWeekCalendar(list):state.calendarView==='kanban'?renderKanban(list):`<div class="agenda-list" id="agendaList">${apptRows||'<div class="empty-state"><strong>Nenhum atendimento</strong>Não há agendamentos para este dia.</div>'}</div>`}</section>
+      <aside class="side-stack"><div class="card next-card"><div class="card-title">Próximo atendimento</div><div class="card-subtitle">${next?'Preparar espaço e ficha da cliente':'Agenda livre por enquanto'}</div>${next?`<div class="next-time"><strong>${next.time}</strong><span>• ${next.end}</span></div><div class="next-client"><div class="client-avatar">${safe(next.initials)}</div><div class="appt-main"><div class="appt-client">${safe(next.client)}</div><div class="appt-service">${safe(next.service)}</div></div></div><div class="next-footer"><span>${safe(next.professional)}</span><button data-action="appointment" data-id="${next.id}">Ver atendimento ${icons.arrow}</button></div>`:'<div class="next-time"><strong>—</strong></div>'}</div>
+      <div class="card"><div class="card-header"><div><div class="card-title">Equipe de hoje</div><div class="card-subtitle">Ocupação por profissional</div></div><button class="text-button" data-action="team-info">Ver equipe ${icons.arrow}</button></div><div class="team-list">${professionals.map((p,i)=>`<div class="team-row"><div class="avatar" style="background:${p[3]};color:${p[4]}">${p[2]}</div><div class="team-info"><strong>${p[0]}</strong><small>${p[1]}</small></div><span class="team-count">${live?state.appointments.filter(a=>a.professional===p[0]).length:(i===1?'92%':i===0?'78%':'64%')}</span></div>`).join('')}</div></div>
+      ${live?'':`<div class="card"><div class="card-header"><div><div class="card-title">Aniversários próximos</div><div class="card-subtitle">Uma boa hora para surpreender</div></div><span class="tag gold">02</span></div><div class="birthday-list"><div class="birthday-item"><div class="birthday-date">14<br>OUT</div><div class="birthday-info"><strong>Mariana Lopes</strong><small>Daqui a 2 dias</small></div><button class="table-action" data-action="birthday" aria-label="Criar mensagem">${icons.spark}</button></div><div class="birthday-item"><div class="birthday-date">18<br>OUT</div><div class="birthday-info"><strong>Helena Prado</strong><small>Daqui a 6 dias</small></div><button class="table-action" data-action="birthday" aria-label="Criar mensagem">${icons.spark}</button></div></div></div>`}</aside></div>`;
+  }
+  function renderClients(){
+    const live=state.supabaseMode&&state.authenticated;const q=(state.clientQuery||'').toLowerCase();
+    const ownClients=state.role==='Profissional'&&!live?new Set(state.appointments.filter(a=>a.professional==='Marina Costa').map(a=>a.client)):null;
+    const permittedClients=ownClients?state.clients.filter(c=>ownClients.has(c.name)):state.clients;
+    const filtered=permittedClients.filter(c=>(c.name+' '+c.phone+' '+c.email).toLowerCase().includes(q));
+    const rows=filtered.map(c=>`<tr data-client-row="${safe((c.name+' '+c.phone+' '+c.email).toLowerCase())}"><td><div class="table-person"><div class="avatar tone-${c.tone}">${safe(c.initials)}</div><div><strong>${safe(c.name)}</strong><small>${safe(c.email)}</small></div></div></td><td>${safe(c.phone)}</td><td>${safe(c.last)}</td><td>${safe(c.lastDate)}</td><td>${live?'<span class="tag">Cliente</span>':c.tag==='VIP'?'<span class="tag gold">VIP</span>':c.tag==='Aniversariante'?'<span class="tag blue">Aniversariante</span>':c.tag==='Nova cliente'?'<span class="tag gray">Nova cliente</span>':'<span class="tag">Recorrente</span>'}</td><td><button class="table-action" data-action="client-detail" data-id="${c.id}" aria-label="Abrir ficha">${icons.arrow}</button></td></tr>`).join('');
+    return `<div class="page-heading"><div><div class="eyebrow"><span class="eyebrow-dot"></span>Relacionamento</div><h1>Clientes</h1><p class="page-subtitle">Conheça cada história e deixe cada visita ainda mais especial.</p></div><div class="heading-actions">${live?'':`<button class="btn" data-action="export-clients">${icons.download}Exportar</button>`}${live&&state.role==='Profissional'?'':`<button class="btn btn-primary" data-action="new-client">${icons.plus}Novo cliente</button>`}</div></div><div class="summary-banner"><div><strong>${permittedClients.length} clientes na sua base</strong><p>Informações de contato, visitas e preferências em um só lugar.</p></div><div class="banner-right">${icons.spark} ${live?'Acesso restrito conforme seu perfil':'12 aniversários este mês'}</div></div><div class="page-toolbar"><div class="toolbar-left"><label class="search-box">${icons.search}<input id="clientSearch" type="search" value="${safe(state.clientQuery)}" placeholder="Buscar por nome, telefone ou e-mail"></label></div>${live?'':`<div class="toolbar-left"><button class="btn btn-sm" data-action="client-filter">Todos os clientes⌄</button><button class="btn btn-sm" data-action="client-filter">Última visita⌄</button></div>`}</div><div class="card table-card"><table class="data-table"><thead><tr><th>Cliente</th><th>Telefone</th><th>Último serviço</th><th>Última visita</th><th>Perfil</th><th></th></tr></thead><tbody>${rows||'<tr><td colspan="6"><div class="empty-state"><strong>Nenhuma cliente encontrada</strong>Tente outra busca.</div></td></tr>'}</tbody></table><div class="table-footer"><span>Exibindo ${filtered.length} de ${permittedClients.length} clientes</span><span>${live?'Dados da unidade sincronizados':'Dados demonstrativos · Protótipo'}</span></div></div>`;
+  }
+  const serviceRows=[
+    ['Corte feminino','Cabelo','45 min',145,'45%','MC','#e7ede6','#55705b'],
+    ['Coloração global','Coloração','120 min',320,'40%','PM','#f3e8df','#a77856'],
+    ['Escova modelada','Finalização','45 min',95,'R$ 35','MC','#e7ede6','#55705b'],
+    ['Manicure em gel','Unhas','60 min',145,'50%','JF','#e9e7f2','#766a99'],
+    ['Hidratação profunda','Tratamento','60 min',220,'40%','PM','#f3e8df','#a77856'],
+    ['Design de sobrancelha','Estética','30 min',85,'R$ 30','JF','#e9e7f2','#766a99']
+  ];
+  function renderServices(){
+    const live=state.supabaseMode&&state.authenticated;
+    if(live){
+      const rows=state.services.map(service=>`<tr><td><div class="table-person"><div class="avatar">${icons.spark}</div><div><strong>${safe(service.name)}</strong><small>Catálogo da unidade</small></div></div></td><td>${service.duration} min</td><td><strong style="color:#495a50;font-size:10px">${money(service.price)}</strong></td><td><span class="tag">Regra a configurar</span></td><td><span class="tag">Ativo</span></td><td></td></tr>`).join('');
+      return `<div class="page-heading"><div><div class="eyebrow"><span class="eyebrow-dot"></span>Catálogo conectado</div><h1>Serviços</h1><p class="page-subtitle">Serviços ativos cadastrados para ${safe(state.branchName)}.</p></div></div><div class="card table-card"><table class="data-table"><thead><tr><th>Serviço</th><th>Duração</th><th>Valor padrão</th><th>Comissão</th><th>Status</th><th></th></tr></thead><tbody>${rows||'<tr><td colspan="6"><div class="empty-state"><strong>Nenhum serviço ativo</strong>Cadastre um serviço para começar a agendar.</div></td></tr>'}</tbody></table><div class="table-footer"><span>${state.services.length} serviços ativos</span><span>Valores lidos do Supabase</span></div></div>`;
+    }
+    const rows=serviceRows.map(s=>`<tr><td><div class="table-person"><div class="avatar" style="background:${s[6]};color:${s[7]}">${icons.spark}</div><div><strong>${s[0]}</strong><small>${s[1]}</small></div></div></td><td>${s[2]}</td><td><strong style="color:#495a50;font-size:10px">${money(s[3])}</strong></td><td><span class="tag">${s[4]} comissão</span></td><td><span class="tag">Ativo</span></td><td><button class="table-action" data-action="service-edit" aria-label="Editar serviço">⋯</button></td></tr>`).join('');
+    return `<div class="page-heading"><div><div class="eyebrow"><span class="eyebrow-dot"></span>Catálogo</div><h1>Serviços</h1><p class="page-subtitle">Seu menu de experiências, valores e regras de comissão.</p></div><div class="heading-actions">${state.role==='Administrador'?'<button class="btn btn-primary" data-action="new-service">'+icons.plus+'Novo serviço</button>':''}</div></div><div class="metric-grid">${metric('Serviços ativos','18','em 5 categorias',icons.spark)}${metric('Faixa de preço',money(85)+' – '+money(520),'por atendimento',icons.wallet,'peach')}${metric('Comissão média','43%','entre os serviços',icons.people,'lavender')}${metric('Mais agendado','Corte feminino','esta semana',icons.calendar,'blue')}</div><div class="page-toolbar"><div class="toolbar-left"><label class="search-box">${icons.search}<input id="serviceSearch" type="search" placeholder="Buscar serviço"></label><button class="btn btn-sm" data-action="service-filter">Todas as categorias⌄</button></div><span class="tag">Comissões atualizadas</span></div><div class="card table-card"><table class="data-table"><thead><tr><th>Serviço</th><th>Duração</th><th>Valor padrão</th><th>Regra de comissão</th><th>Status</th><th></th></tr></thead><tbody>${rows}</tbody></table><div class="table-footer"><span>Exibindo 6 serviços de 18</span><span>Valores em R$</span></div></div>`;
+  }
+  function renderInventory(){
+    const internal=state.products.filter(p=>p.type===state.inventoryTab);
+    const rows=internal.map(p=>{
+      const pct=Math.min(100,Math.round((p.stock/(p.minimum*2))*100));
+      return `<tr><td><div class="table-person"><div class="avatar" style="background:${p.type==='Uso interno'?'#f3e8df':'#e9eee6'};color:${p.type==='Uso interno'?'#a77856':'#66806b'}">${safe(p.initials)}</div><div><strong>${safe(p.name)}</strong><small>SKU ${safe(p.sku)}</small></div></div></td><td>${p.type==='Uso interno'?'<span class="tag gold">Uso interno</span>':'<span class="tag blue">Revenda</span>'}</td><td><div class="stock-level"><strong style="color:#4c5c52;font-size:10px">${p.stock} ${p.unit}</strong><div class="stock-track"><span class="${p.stock<=p.minimum?'low':''}" style="width:${pct}%"></span></div></div></td><td>${p.minimum} ${p.unit}</td><td>${money(p.cost)}</td><td>${p.stock<=p.minimum?'<span class="status-pill service">Estoque baixo</span>':'<span class="status-pill">Disponível</span>'}</td><td><button class="table-action" data-action="stock-item" data-name="${safe(p.name)}">⋯</button></td></tr>`;
+    }).join('');
+    const low=internal.filter(p=>p.stock<=p.minimum).length;
+    return `<div class="page-heading"><div><div class="eyebrow"><span class="eyebrow-dot"></span>Operação</div><h1>Estoque</h1><p class="page-subtitle">Cuide dos insumos do salão e dos produtos que seguem para casa.</p></div><div class="heading-actions"><button class="btn" data-action="stock-movement">${icons.plus}Movimentação</button><button class="btn btn-primary" data-action="stock-entry">${icons.box}Registrar entrada</button></div></div><div class="metric-grid">${metric('Itens cadastrados','24','em 2 categorias',icons.box)}${metric('Uso interno','14','produtos de consumo',icons.spark,'peach')}${metric('Produtos para revenda','10','home care',icons.wallet,'lavender')}${metric('Abaixo do mínimo',String(low).padStart(2,'0'),low?'precisam de reposição':'estoque saudável',icons.alert,'blue')}</div>${low?`<div class="notice" style="margin-bottom:15px">${icons.alert}<span><strong>${low} itens precisam de atenção.</strong> Reponha insumos para evitar interrupções nos atendimentos.</span></div>`:''}<div class="page-toolbar"><div class="filter-tabs"><button class="${state.inventoryTab==='Uso interno'?'active':''}" data-action="inventory-tab" data-tab="Uso interno">Uso interno</button><button class="${state.inventoryTab==='Revenda'?'active':''}" data-action="inventory-tab" data-tab="Revenda">Revenda</button></div><button class="btn btn-sm" data-action="inventory-history">${icons.clock}Histórico de movimentações</button></div><div class="card table-card"><table class="data-table"><thead><tr><th>Produto</th><th>Categoria</th><th>Saldo atual</th><th>Estoque mínimo</th><th>Custo unitário</th><th>Situação</th><th></th></tr></thead><tbody>${rows||'<tr><td colspan="7"><div class="empty-state">Nenhum produto nesta categoria.</div></td></tr>'}</tbody></table><div class="table-footer"><span>${internal.length} itens nesta categoria</span><span>Saldo demonstrativo por unidade</span></div></div>`;
+  }
+  function renderFinance(){
+    const bars=[42,56,47,72,64,80,58,92,73,84,68,100];
+    const names=['Nov','Dez','Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out'];
+    return `<div class="page-heading"><div><div class="eyebrow"><span class="eyebrow-dot"></span>Visão da administração</div><h1>Financeiro</h1><p class="page-subtitle">Acompanhe o movimento do salão e a rentabilidade dos serviços.</p></div><div class="heading-actions"><button class="btn" data-action="finance-period">Outubro 2026⌄</button><button class="btn" data-action="export-finance">${icons.download}Exportar relatório</button></div></div><div class="summary-banner"><div><strong>Resumo da unidade · 1 a 12 de outubro</strong><p>Valores demonstrativos para validação do fluxo financeiro.</p></div><div class="banner-right">Atualizado agora · ${icons.check}</div></div><div class="metric-grid">${metric('Entradas no período',money(28460),'<span class="trend-up">↑ 12,6%</span> vs. mês anterior',icons.wallet)}${metric('Saídas registradas',money(9870),'despesas, taxas e repasses',icons.box,'peach')}${metric('Margem dos serviços',money(14630),'após comissão, insumos e taxa',icons.spark,'lavender')}${metric('Saldo de caixa',money(18590),'entradas menos saídas',icons.check,'blue')}</div><div class="finance-grid"><div class="card chart-card"><div class="chart-top"><div><div class="card-title">Faturamento ao longo do tempo</div><div class="card-subtitle">Recebimentos confirmados, em R$</div><div class="chart-value">R$ 28.460 <small>↗ 12,6%</small></div></div><button class="btn btn-sm" data-action="chart-period">Últimos 12 meses⌄</button></div><div class="chart-area">${bars.map((h,i)=>`<div class="chart-col"><div class="chart-bar ${i===11?'current':''}" style="height:${h}%"></div><span>${names[i]}</span></div>`).join('')}</div><div class="legend-row"><span><i class="legend-swatch dark"></i>Este mês</span><span><i class="legend-swatch"></i>Meses anteriores</span></div></div><div class="profit-callout"><div><div class="card-title">Composição da margem</div><div class="card-subtitle">Serviços realizados no período</div><div class="metric-value">${money(14630)}</div><div class="metric-foot"><span class="trend-up">51,4%</span> sobre o faturamento de serviços</div></div><div class="profit-breakdown"><div class="break-row"><span>Valor dos serviços</span><strong>${money(28460)}</strong></div><div class="break-row"><span>Comissões</span><strong class="negative">− ${money(8540)}</strong></div><div class="break-row"><span>Produtos consumidos</span><strong class="negative">− ${money(3840)}</strong></div><div class="break-row"><span>Taxas de pagamento</span><strong class="negative">− ${money(1450)}</strong></div><div class="break-line"></div><div class="break-row"><strong>Margem por serviço</strong><strong class="positive">${money(14630)}</strong></div></div></div></div><div class="card table-card"><div class="card-header"><div><div class="card-title">Rentabilidade por serviço</div><div class="card-subtitle">Valores líquidos após custos diretos</div></div><button class="text-button" data-action="profit-details">Ver detalhamento ${icons.arrow}</button></div><table class="data-table"><thead><tr><th>Serviço</th><th>Realizados</th><th>Faturamento</th><th>Comissão</th><th>Insumos + taxas</th><th>Margem</th></tr></thead><tbody><tr><td><strong style="color:#45564c">Coloração global</strong></td><td>32</td><td>${money(10240)}</td><td>${money(4096)}</td><td>${money(1780)}</td><td class="positive" style="font-weight:750">${money(4364)}</td></tr><tr><td><strong style="color:#45564c">Corte + escova</strong></td><td>48</td><td>${money(8640)}</td><td>${money(3888)}</td><td>${money(620)}</td><td class="positive" style="font-weight:750">${money(4132)}</td></tr><tr><td><strong style="color:#45564c">Manicure em gel</strong></td><td>27</td><td>${money(3915)}</td><td>${money(1957)}</td><td>${money(510)}</td><td class="positive" style="font-weight:750">${money(1448)}</td></tr><tr><td><strong style="color:#45564c">Tratamentos</strong></td><td>21</td><td>${money(5665)}</td><td>${money(2266)}</td><td>${money(2380)}</td><td class="positive" style="font-weight:750">${money(1019)}</td></tr></tbody></table></div><p style="margin:10px 2px;color:#9aa49e;font-size:8px">Indicador de margem de contribuição: não inclui rateio de aluguel, impostos ou custos fixos.</p>`;
+  }
+  function renderCommissions(){
+    const professional=state.role==='Profissional';
+    const title=professional?'Minhas comissões':'Comissões da equipe';
+    const records=professional?[
+      ['07 out, 2026','Corte + escova','Camila Nunes','R$ 81,00','Pendente'],
+      ['06 out, 2026','Hidratação profunda','Isabela Rocha','R$ 88,00','Pendente'],
+      ['04 out, 2026','Corte feminino','Mariana Lopes','R$ 65,25','Pago'],
+      ['02 out, 2026','Escova modelada','Sofia Carvalho','R$ 42,75','Pago']
+    ]:[
+      ['07 out, 2026','Coloração global','Paula Mendes','R$ 156,00','Pendente'],
+      ['07 out, 2026','Corte + escova','Marina Costa','R$ 81,00','Pendente'],
+      ['06 out, 2026','Manicure em gel','Júlia Freitas','R$ 72,50','Pendente'],
+      ['04 out, 2026','Corte feminino','Marina Costa','R$ 65,25','Pago'],
+      ['02 out, 2026','Hidratação profunda','Paula Mendes','R$ 88,00','Pago']
+    ];
+    const rows=records.map(r=>`<tr><td>${r[0]}</td><td><strong style="color:#45564c">${r[1]}</strong></td>${professional?`<td>${r[2]}</td>`:`<td><div class="table-person"><div class="avatar" style="width:26px;height:26px;font-size:8px">${initials(r[2])}</div><strong style="font-size:9px;color:#536159">${r[2]}</strong></div></td>`}<td class="commission-amount">${r[3]}</td><td>${r[4]==='Pago'?'<span class="tag">Pago</span>':'<span class="tag gold">Pendente</span>'}</td><td><button class="table-action" data-action="commission-detail" aria-label="Detalhar comissão">${icons.arrow}</button></td></tr>`).join('');
+    return `<div class="page-heading"><div><div class="eyebrow"><span class="eyebrow-dot"></span>${professional?'Seu painel financeiro':'Repasses da equipe'}</div><h1>${title}</h1><p class="page-subtitle">${professional?'Acompanhe seus serviços, repasses e projeção de ganhos.':'Visibilidade clara dos valores gerados e repassados.'}</p></div><div class="heading-actions">${professional?'':'<button class="btn" data-action="commission-export">'+icons.download+'Exportar extrato</button><button class="btn btn-primary" data-action="new-payout">'+icons.wallet+'Registrar repasse</button>'}</div></div><div class="metric-grid">${metric(professional?'Pendente de repasse':'Total pendente',professional?money(169):money(1248),professional?'2 serviços aguardando':'equipe completa',icons.wallet)}${metric(professional?'Já recebido':'Pago neste mês',professional?money(108):money(2940),professional?'neste mês':'último repasse em 10 out',icons.check,'peach')}${metric(professional?'Projeção do mês':'Comissões geradas',professional?money(1240):money(7980),professional?'considerando agenda futura':'sobre serviços realizados',icons.spark,'lavender')}${metric(professional?'Serviços realizados':'Profissionais ativos',professional?'12':'06',professional?'em outubro':'com comissão no período',icons.people,'blue')}</div>${professional?'<div class="summary-banner"><div><strong>Oi, Marina! Você está no ritmo. ✨</strong><p>Com mais 4 atendimentos confirmados na agenda, sua projeção pode chegar a R$ 1.240 neste mês.</p></div><div class="banner-right">Projeção, não valor confirmado</div></div>':''}<div class="page-toolbar"><div class="filter-tabs"><button class="active" data-action="commission-filter">Todos</button><button data-action="commission-filter">Pendentes</button><button data-action="commission-filter">Pagos</button></div><button class="btn btn-sm" data-action="commission-period">Outubro 2026⌄</button></div><div class="card table-card"><table class="data-table"><thead><tr><th>Data</th><th>Serviço</th><th>${professional?'Cliente':'Profissional'}</th><th>Comissão</th><th>Situação</th><th></th></tr></thead><tbody>${rows}</tbody></table><div class="table-footer"><span>Exibindo ${records.length} lançamentos</span><span>Comissões calculadas no fechamento da comanda</span></div></div>`;
+  }
+  function openModal(html,wide=false){document.getElementById('modalRoot').innerHTML=`<div class="modal-backdrop" data-action="backdrop-close"><div class="modal ${wide?'wide':''}" role="dialog" aria-modal="true">${html}</div></div>`;}
+  function closeModal(){document.getElementById('modalRoot').innerHTML='';}
+  function modalHeader(title,sub){return `<div class="modal-header"><div><h2>${title}</h2><p>${sub}</p></div><button class="modal-close" data-action="close-modal" aria-label="Fechar">×</button></div>`;}
+  function appointmentModal(id){
+    const live=state.supabaseMode&&state.authenticated;const a=state.appointments.find(x=>x.id===Number(id));if(!a)return;
+    state.selectedAppointment=a.id;const c=state.clients.find(x=>x.id===a.clientId)||state.clients.find(x=>x.name===a.client);
+    const visitText=live?'Dados do atendimento':`${c?c.visits:4} visitas`;
+    const allergyText=live?(c?.notes||'Nenhuma observação registrada'):c?.allergy||'Nenhuma informada';
+    const formulaText=live?'Ainda sem registro':c?.formula||'—';
+    const actions=live?'<div class="notice" style="margin-top:14px">Reagende arrastando este cartão para outro horário no Kanban. Caixa e edição detalhada serão conectadas na próxima etapa.</div>':`<div class="modal-actions"><button class="btn" data-action="edit-appointment">Editar horário</button>${a.status==='Finalizado'?'<button class="btn btn-soft" data-action="toast-report">Atendimento finalizado</button>':'<button class="btn btn-primary" data-action="open-checkout" data-id="'+a.id+'">'+icons.wallet+'Fechar comanda</button>'}</div>`;
+    openModal(`${modalHeader('Detalhes do atendimento','Agenda · '+dateFmt(state.date,{day:'numeric',month:'long'}))}<div class="modal-body"><div class="detail-head"><div class="avatar tone-${a.tone}">${safe(a.initials)}</div><div><strong>${safe(a.client)}</strong><small>${c?safe(c.phone):'Cliente cadastrada'} · ${visitText}</small></div><span class="status-pill ${a.status==='Em atendimento'?'service':a.status==='Finalizado'?'done':'scheduled'}" style="margin-left:auto">${safe(a.status)}</span></div><div class="detail-section"><h3>Resumo</h3><div class="detail-line"><span>Serviço</span><strong>${safe(a.service)}</strong></div><div class="detail-line"><span>Horário</span><strong>${a.time} – ${a.end}</strong></div><div class="detail-line"><span>Profissional</span><strong>${safe(a.professional)}</strong></div><div class="detail-line"><span>Valor previsto</span><strong>${money(a.amount)}</strong></div></div><div class="detail-section"><h3>Ficha da cliente</h3><div class="detail-line"><span>Alergias / observações</span><strong>${safe(allergyText)}</strong></div><div class="detail-line"><span>Última fórmula</span><strong>${safe(formulaText)}</strong></div></div>${actions}</div>`,true);
+  }
+  function newAppointmentModal(){
+    const live=state.supabaseMode&&state.authenticated;
+    const clientOptions=state.clients.map(c=>`<option value="${c.id}">${safe(c.name)} · ${safe(c.phone)}</option>`).join('');
+    const serviceOptions=live?state.services.map(s=>`<option value="${safe(s.backendId)}">${safe(s.name)} · ${money(s.price)} · ${s.duration} min</option>`).join(''):demoServiceOptions.map(s=>`<option value="${safe(s.name)}">${safe(s.name)} · ${money(s.price)} · ${s.duration} min</option>`).join('');
+    const staffOptions=live?state.professionals.map(p=>`<option value="${safe(p.backendId)}">${safe(p.name)}</option>`).join(''):['Marina Costa','Paula Mendes','Júlia Freitas'].map(name=>`<option value="${safe(name)}">${safe(name)}</option>`).join('');
+    if(!clientOptions||!serviceOptions||!staffOptions){toast('Cadastre ao menos um cliente, serviço e profissional antes de agendar.');return;}
+    const dateValue=dateKeyInZone(state.date,state.timeZone);
+    openModal(`${modalHeader('Novo agendamento','Reserve um horário para sua próxima experiência.') }<div class="modal-body"><form id="appointmentForm"><div class="form-grid"><div class="form-field full"><label>Cliente</label><select name="client" required><option value="">Selecione uma cliente</option>${clientOptions}</select></div><div class="form-field"><label>Serviço</label><select name="service" required>${serviceOptions}</select></div><div class="form-field"><label>Profissional</label><select name="professional" required>${staffOptions}</select></div><div class="form-field"><label>Data</label><input type="date" name="date" value="${dateValue}" required></div><div class="form-field"><label>Horário</label><input type="time" name="time" value="10:00" required></div><div class="form-field full"><label>Observação</label><input name="notes" placeholder="Preferências ou observações para o atendimento"></div></div><div class="modal-actions"><button type="button" class="btn" data-action="close-modal">Cancelar</button><button class="btn btn-primary" type="submit">${icons.check}Confirmar agendamento</button></div></form></div>`);
+  }
+  function newClientModal(){
+    openModal(`${modalHeader('Nova cliente','Adicione os dados principais; a ficha pode ser completada depois.') }<div class="modal-body"><form id="clientForm"><div class="form-grid"><div class="form-field full"><label>Nome completo</label><input name="name" placeholder="Ex.: Laura Mendes" required></div><div class="form-field"><label>Celular</label><input name="phone" placeholder="(11) 99999-9999" required></div><div class="form-field"><label>E-mail</label><input name="email" type="email" placeholder="cliente@email.com"></div><div class="form-field"><label>Aniversário</label><input name="birthday" type="date"></div><div class="form-field"><label>Como prefere contato?</label><select><option>WhatsApp</option><option>Ligação</option><option>E-mail</option><option>Não informar</option></select></div><div class="form-field full"><label>Observação inicial</label><textarea name="notes" placeholder="Alergias, preferências ou outras informações importantes"></textarea></div></div><p style="color:#9aa49e;font-size:8px;line-height:1.5">Os dados da cliente devem ser usados apenas para finalidades relacionadas ao atendimento e conforme consentimentos aplicáveis.</p><div class="modal-actions"><button type="button" class="btn" data-action="close-modal">Cancelar</button><button class="btn btn-primary" type="submit">${icons.check}Salvar cliente</button></div></form></div>`);
+  }
+  function openCheckout(id=null){
+    const a=id?state.appointments.find(x=>x.id===Number(id)):null;
+    state.selectedAppointment=a?a.id:null;
+    const client=a?a.client:'Cliente da comanda';
+    const service=a?a.service:'Serviço realizado';
+    const total=a?a.amount:180;
+    openModal(`${modalHeader('Fechar comanda','Confira os itens e registre uma ou mais formas de pagamento.') }<div class="modal-body"><form id="checkoutForm" data-total="${total}"><div class="detail-head" style="margin-bottom:13px"><div class="avatar">${initials(client)}</div><div><strong>${safe(client)}</strong><small>${a?'Atendimento de hoje · '+safe(a.professional):'Comanda avulsa'}</small></div></div><div class="checkout-lines"><div class="checkout-item"><div><strong>${safe(service)}</strong><small>Serviço · comissão calculada conforme regra vigente</small></div><input id="checkoutItemAmount" type="number" min="0" step="0.01" value="${Number(total).toFixed(2)}" aria-label="Valor do serviço"></div><div class="checkout-item"><div><strong>Insumos registrados</strong><small>Produtos de uso interno vinculados ao atendimento</small></div><span class="tag">R$ 25,00 custo</span></div></div><div class="checkout-total"><span>Total da comanda</span><strong id="checkoutTotal">${money(total)}</strong></div><div style="display:flex;align-items:center;justify-content:space-between;margin:3px 0 9px"><div class="card-title" style="font-size:10px">Formas de pagamento</div><button type="button" class="text-button" data-action="add-payment">${icons.plus}Adicionar forma</button></div><div class="payments-list" id="paymentsList">${paymentRow('PIX',total)}</div><div class="payment-summary"><span>Valor recebido</span><strong id="paymentSum">${money(total)}</strong></div><div class="validation-message" id="paymentError">A soma dos pagamentos precisa ser igual ao total da comanda.</div><div class="notice" style="margin-top:13px">${icons.spark}<span>O sistema registra as taxas, o consumo de insumos e a comissão de forma separada para calcular a margem do serviço.</span></div><div class="modal-actions"><button type="button" class="btn" data-action="close-modal">Cancelar</button><button class="btn btn-primary" type="submit">${icons.check}Confirmar fechamento</button></div></form></div>`,true);
+  }
+  function paymentRow(method='PIX',amount=0){
+    return `<div class="payment-row"><div><label>Meio de pagamento</label><select class="payment-method"><option ${method==='PIX'?'selected':''}>PIX</option><option ${method==='Cartão de crédito'?'selected':''}>Cartão de crédito</option><option ${method==='Cartão de débito'?'selected':''}>Cartão de débito</option><option ${method==='Dinheiro'?'selected':''}>Dinheiro</option></select></div><div><label>Valor (R$)</label><input class="payment-amount" type="number" min="0" step="0.01" value="${Number(amount).toFixed(2)}"></div><button type="button" class="remove-payment" data-action="remove-payment" aria-label="Remover forma de pagamento">×</button></div>`;
+  }
+  const timeToMinutes=time=>{const [hours,minutes]=String(time).split(':').map(Number);return hours*60+minutes;};
+  const minutesToTime=minutes=>`${String(Math.floor(minutes/60)).padStart(2,'0')}:${String(minutes%60).padStart(2,'0')}`;
+  function normalizeBrazilPhone(value){let digits=String(value||'').replace(/\D/g,'');if(digits.startsWith('00'))digits=digits.slice(2);if(digits.startsWith('55'))return digits.length===12||digits.length===13?`+${digits}`:null;if(digits.length===10||digits.length===11)return `+55${digits}`;return null;}
+  function friendlyError(error,fallback='Não foi possível concluir a operação.'){
+    const message=String(error?.message||error||'');
+    if(/invalid login credentials/i.test(message))return 'E-mail ou senha incorretos.';
+    if(/email not confirmed/i.test(message))return 'Confirme seu e-mail antes de entrar.';
+    if(/user already registered|already been registered/i.test(message))return 'Este e-mail já possui uma conta. Tente entrar.';
+    if(/42501|row-level security|permission denied|sem permissão/i.test(message))return 'Sua conta não tem permissão para esta ação nesta unidade.';
+    if(/23505|duplicate key|already exists/i.test(message))return 'Já existe um registro com esses dados.';
+    if(/23P01|exclusion|conflit|overlap|horário bloqueado/i.test(message))return 'Este horário está ocupado ou bloqueado. Escolha outro.';
+    if(/22007|precisa ser futuro|horário.*futuro/i.test(message))return 'Escolha um horário futuro.';
+    return message||fallback;
+  }
+  function showFormError(form,message){let node=form.querySelector('.form-error');if(!node){node=document.createElement('div');node.className='form-error';node.setAttribute('role','alert');node.style.cssText='grid-column:1/-1;margin:10px 0;padding:10px 12px;border:1px solid #efd3cf;border-radius:10px;background:#fff7f6;color:#9d514c;font-size:11px;line-height:1.45';form.prepend(node);}node.textContent=message;}
+  function openKanbanScheduleModal(waitlistId,defaultTime){
+    const live=state.supabaseMode&&state.authenticated;const request=state.waitlist.find(item=>item.id===Number(waitlistId));
+    const client=request&&state.clients.find(item=>item.id===request.clientId);
+    if(!request||!client){toast('Cliente da fila não encontrada.');return;}
+    const serviceList=live?state.services:demoServiceOptions;
+    const serviceOptions=serviceList.map(service=>{const value=live?service.backendId:service.name;const selected=live?service.backendId===request.serviceBackendId:service.name===request.service;return `<option value="${safe(value)}" ${selected?'selected':''}>${safe(service.name)} · ${money(service.price)} · ${service.duration} min</option>`;}).join('');
+    const staffList=live?state.professionals:['Marina Costa','Paula Mendes','Júlia Freitas'].map(name=>({name,backendId:name}));
+    const staffOptions=staffList.map(pro=>{const value=live?pro.backendId:pro.name;const selected=live?pro.backendId===request.preferredProfessionalBackendId:pro.name===request.preferredProfessional;return `<option value="${safe(value)}" ${selected?'selected':''}>${safe(pro.name)}</option>`;}).join('');
+    const defaultProfessional=live?request.preferredProfessionalBackendId||'':request.preferredProfessional||'';
+    openModal(`${modalHeader('Confirmar horário','A cliente sairá da fila somente após confirmar o agendamento.') }<div class="modal-body"><form id="kanbanScheduleForm" data-waitlist-id="${request.id}"><div class="detail-head"><div class="avatar tone-${client.tone}">${safe(client.initials)}</div><div><strong>${safe(client.name)}</strong><small>${safe(client.phone)} · veio da fila de encaixe</small></div></div><div class="form-grid"><div class="form-field full"><label>Serviço</label><select name="service" required>${serviceOptions}</select></div><div class="form-field"><label>Profissional</label><select name="professional" required><option value="">Selecione</option>${staffOptions}</select></div><div class="form-field"><label>Horário</label><input type="time" name="time" step="1800" value="${safe(defaultTime)}" min="08:00" max="17:00" required></div><div class="form-field full"><label>Observação para a equipe</label><input name="notes" value="Preferência: ${safe(request.preference)}" maxlength="300"></div></div><div class="notice" style="margin-top:13px">${icons.clock}<span>A duração e o horário de término são preenchidos pelo serviço. O sistema verifica a disponibilidade antes de salvar.</span></div><div class="modal-actions"><button type="button" class="btn" data-action="close-modal">Cancelar</button><button type="submit" class="btn btn-primary">${icons.check}Confirmar agendamento</button></div></form></div>`,true);
+    document.querySelector('#kanbanScheduleForm [name="professional"]').value=defaultProfessional;
+  }
+  function addWaitlistModal(){
+    const live=state.supabaseMode&&state.authenticated;const eligible=state.clients.filter(client=>!state.waitlist.some(item=>item.clientId===client.id));
+    const clients=eligible.map(client=>`<option value="${client.id}">${safe(client.name)} · ${safe(client.phone)}</option>`).join('');
+    const serviceList=live?state.services:demoServiceOptions;const services=serviceList.map(service=>`<option value="${safe(live?service.backendId:service.name)}">${safe(service.name)} · ${money(service.price)}</option>`).join('');
+    const proList=live?state.professionals:['Marina Costa','Paula Mendes','Júlia Freitas'].map(name=>({name,backendId:name}));const pros=proList.map(pro=>`<option value="${safe(live?pro.backendId:pro.name)}">${safe(pro.name)}</option>`).join('');
+    const noData=live&&(!clients||!services)?'Cadastre ao menos uma cliente e um serviço antes de usar a fila.':'';
+    openModal(`${modalHeader('Adicionar à fila de encaixe','Guarde a intenção da cliente até encontrar um horário.') }<div class="modal-body">${noData?`<div class="notice">${safe(noData)}</div>`:''}<form id="waitlistForm"><div class="form-grid"><div class="form-field full"><label>Cliente</label><select name="clientId" required>${clients||'<option value="">Nenhuma cliente disponível</option>'}</select></div><div class="form-field full"><label>Serviço desejado</label><select name="service" required>${services||'<option value="">Nenhum serviço ativo</option>'}</select></div><div class="form-field"><label>Preferência de horário</label><select name="preference"><option value="any">Qualquer horário</option><option value="morning">Manhã</option><option value="afternoon">Tarde</option><option value="evening">Noite</option></select></div><div class="form-field"><label>Profissional (opcional)</label><select name="professional"><option value="">Sem preferência</option>${pros}</select></div></div><div class="modal-actions"><button type="button" class="btn" data-action="close-modal">Cancelar</button><button type="submit" class="btn btn-primary" ${eligible.length&&serviceList.length?'':'disabled'}>${icons.plus}Adicionar à fila</button></div></form></div>`);
+  }
+  async function handleKanbanDrop(type,id,time){
+    if(state.role==='Profissional'){toast('Somente recepção e administração podem alterar a agenda.');return;}
+    if(!/^([01][0-9]|2[0-3]):[0-5][0-9]$/.test(time)||timeToMinutes(time)<480||timeToMinutes(time)>=1080){toast('Escolha um horário entre 08:00 e 17:00.');return;}
+    if(type==='waitlist'){openKanbanScheduleModal(id,time);return;}
+    const appointment=state.appointments.find(item=>item.id===Number(id));if(!appointment)return;
+    if(['Finalizado','Faltou','Cancelado'].includes(appointment.status)){toast('Atendimentos encerrados não podem ser movidos.');return;}
+    const live=state.supabaseMode&&state.authenticated;const siblings=live?state.appointments.filter(item=>item.backendId===appointment.backendId):[appointment];
+    const delta=timeToMinutes(time)-timeToMinutes(appointment.time);const duration=Math.max(15,timeToMinutes(appointment.end)-timeToMinutes(appointment.time));const newEnd=timeToMinutes(time)+duration;
+    const lastEnd=live?Math.max(...siblings.map(item=>timeToMinutes(item.end)+delta)):newEnd;
+    if(lastEnd>1080){toast('O atendimento ultrapassaria o horário de fechamento às 18:00.');return;}
+    const collision=live?siblings.some(moving=>state.appointments.some(other=>other.backendId!==appointment.backendId&&other.professionalBackendId===moving.professionalBackendId&&!['Finalizado','Faltou','Cancelado'].includes(other.status)&&timeToMinutes(moving.time)+delta<timeToMinutes(other.end)&&timeToMinutes(moving.end)+delta>timeToMinutes(other.time))):state.appointments.some(other=>other.id!==appointment.id&&other.professional===appointment.professional&&!['Finalizado','Faltou','Cancelado'].includes(other.status)&&timeToMinutes(time)<timeToMinutes(other.end)&&newEnd>timeToMinutes(other.time));
+    if(collision){toast(`Conflito: ${appointment.professional} já tem um atendimento nesse intervalo.`);return;}
+    const oldTime=appointment.time;
+    if(live){
+      const first=siblings.slice().sort((a,b)=>a.time.localeCompare(b.time))[0];const newFirst=minutesToTime(timeToMinutes(first.time)+delta);
+      const {error}=await supabaseClient.rpc('move_appointment',{p_appointment_id:appointment.backendId,p_new_starts_at:zonedDateTimeToIso(dateKeyInZone(state.date),newFirst)});
+      if(error){toast(friendlyError(error,'Não foi possível reagendar o atendimento.'));return;}
+      state.kanbanSelected=null;await refreshAgenda();toast(`${appointment.client} reagendada de ${oldTime} para ${time}.`);return;
+    }
+    appointment.time=time;appointment.end=minutesToTime(newEnd);state.kanbanSelected=null;render();toast(`${appointment.client} reagendada de ${oldTime} para ${time}.`);
+  }
+  function clientDetail(id){
+    const live=state.supabaseMode&&state.authenticated;const c=state.clients.find(x=>x.id===Number(id));if(!c)return;
+    const liveSections=`<div class="detail-section"><h3>Observações registradas</h3><div class="notice" style="margin-top:7px">${icons.alert}<span>${safe(c.notes||'Nenhuma observação registrada.')}</span></div></div><div class="detail-section"><h3>Histórico de atendimento</h3><div class="detail-line"><span>Visitas e fórmulas</span><strong>Resumo detalhado em configuração</strong></div></div>`;
+    const demoSections=`<div class="detail-section"><h3>Resumo de relacionamento</h3><div class="detail-line"><span>Visitas realizadas</span><strong>${c.visits}</strong></div><div class="detail-line"><span>Última visita</span><strong>${safe(c.lastDate)} · ${safe(c.last)}</strong></div><div class="detail-line"><span>Próximo horário</span><strong>${safe(c.next)}</strong></div></div><div class="detail-section"><h3>Cuidados importantes</h3><div class="notice" style="margin-top:7px">${icons.alert}<span>${safe(c.allergy)}</span></div></div><div class="detail-section"><h3>Fórmulas e histórico técnico</h3><div class="detail-line"><span>Última fórmula registrada</span><strong>${safe(c.formula)}</strong></div><div class="detail-line"><span>Fotos autorizadas</span><strong>2 imagens · acesso restrito</strong></div></div>`;
+    const actions=live?`${state.role==='Profissional'?'':`<div class="modal-actions"><button class="btn btn-primary" data-action="new-appointment">${icons.calendar}Novo agendamento</button></div>`}`:`<div class="modal-actions"><button class="btn" data-action="client-edit" data-id="${c.id}">Editar ficha</button><button class="btn btn-primary" data-action="new-appointment">${icons.calendar}Novo agendamento</button></div>`;
+    openModal(`${modalHeader('Ficha da cliente',live?'Dados sincronizados · Espaço Bruna Alves':'CRM · Histórico e preferências') }<div class="modal-body"><div class="detail-head"><div class="avatar tone-${c.tone}">${safe(c.initials)}</div><div><strong>${safe(c.name)}</strong><small>${safe(c.phone)} · ${safe(c.email)}</small></div><span class="tag" style="margin-left:auto">${safe(c.tag)}</span></div>${live?liveSections:demoSections}${actions}</div>`,true);
+  }
+  function toast(message){
+    const el=document.createElement('div');el.className='toast';el.innerHTML=`${icons.check}<span>${safe(message)}</span>`;document.getElementById('toastContainer').appendChild(el);setTimeout(()=>el.remove(),3200);
+  }
+  document.addEventListener('dragstart',e=>{
+    const target=e.target instanceof Element?e.target.closest('[data-drag-type]'):null;
+    if(!target||!e.dataTransfer)return;
+    e.dataTransfer.effectAllowed='move';
+    e.dataTransfer.setData('text/plain',`${target.dataset.dragType}:${target.dataset.id}`);
+  });
+  document.addEventListener('dragover',e=>{
+    const target=e.target instanceof Element?e.target.closest('.kanban-dropzone[data-time]'):null;
+    if(target){e.preventDefault();target.classList.add('drag-over');}
+  });
+  document.addEventListener('dragleave',e=>{
+    const target=e.target instanceof Element?e.target.closest('.kanban-dropzone[data-time]'):null;
+    if(target&&(!e.relatedTarget||!target.contains(e.relatedTarget)))target.classList.remove('drag-over');
+  });
+  document.addEventListener('drop',e=>{
+    const target=e.target instanceof Element?e.target.closest('.kanban-dropzone[data-time]'):null;
+    if(!target)return;
+    e.preventDefault();target.classList.remove('drag-over');
+    const match=(e.dataTransfer?.getData('text/plain')||'').match(/^(waitlist|appointment):([0-9]+)$/);
+    if(match)handleKanbanDrop(match[1],Number(match[2]),target.dataset.time);
+  });
+  document.addEventListener('click',e=>{
+    const role=e.target.closest('[data-role]'); if(role){setRole(role.dataset.role);return;}
+    const page=e.target.closest('[data-page]'); if(page){state.page=page.dataset.page;state.clientQuery='';render();return;}
+    const action=e.target.closest('[data-action]'); if(!action)return;
+    const a=action.dataset.action;
+    if(a==='auth-mode-signup'){renderAuthGate('signup');return;}
+    if(a==='auth-mode-login'){renderAuthGate('login');return;}
+    if(a==='auth-retry'){bootApplication();return;}
+    if(a==='auth-logout'){if(supabaseClient)supabaseClient.auth.signOut();return;}
+    if(a==='toggle-role-menu'){const m=document.getElementById('roleMenu');m.hidden=!m.hidden;return;}
+    if(a==='toggle-sidebar'){document.getElementById('sidebar').classList.toggle('open');document.getElementById('mobileOverlay').classList.toggle('visible');return;}
+    if(a==='backdrop-close'&&e.target===action){closeModal();return;}
+    if(a==='close-modal'){closeModal();return;}
+    if(a==='new-appointment'){newAppointmentModal();return;}
+    if(a==='new-client'){newClientModal();return;}
+    if(a==='new-order'){openCheckout();return;}
+    if(a==='appointment'){appointmentModal(action.dataset.id);return;}
+    if(a==='open-checkout'){if(state.supabaseMode&&state.authenticated){toast('O fluxo de caixa ainda não está ativado neste perfil.');return;}openCheckout(action.dataset.id);return;}
+    if(a==='add-payment'){const form=document.getElementById('checkoutForm');const total=Number(form?.dataset.total||0);const used=[...document.querySelectorAll('.payment-amount')].reduce((s,i)=>s+(Number(i.value)||0),0);const remaining=Math.max(0,total-used);document.getElementById('paymentsList').insertAdjacentHTML('beforeend',paymentRow('Cartão de crédito',remaining));updatePaymentSummary();return;}
+    if(a==='remove-payment'){if(document.querySelectorAll('.payment-row').length>1){action.closest('.payment-row').remove();updatePaymentSummary();}else toast('A comanda precisa ter ao menos uma forma de pagamento.');return;}
+    if(a==='date-prev'){state.date.setDate(state.date.getDate()-(state.calendarView==='week'?7:1));state.supabaseMode?refreshAgenda():render();return;}
+    if(a==='date-next'){state.date.setDate(state.date.getDate()+(state.calendarView==='week'?7:1));state.supabaseMode?refreshAgenda():render();return;}
+    if(a==='date-today'){state.date=new Date();state.supabaseMode?refreshAgenda():render();return;}
+    if(a==='view-day'){state.calendarView='day';state.kanbanSelected=null;render();return;}
+    if(a==='view-week'){if(state.supabaseMode){toast('A visão semanal ainda será conectada aos dados reais.');return;}state.calendarView='week';state.kanbanSelected=null;render();return;}
+    if(a==='view-kanban'){if(state.role==='Profissional'){toast('O quadro de encaixes é disponível para recepção e administração.');return;}state.calendarView='kanban';state.kanbanSelected=null;render();return;}
+    if(a==='add-waitlist'){addWaitlistModal();return;}
+    if(a==='kanban-card'){state.kanbanSelected={type:action.dataset.type,id:Number(action.dataset.id)};render();toast('Cartão selecionado. Toque em um horário para continuar.');return;}
+    if(a==='kanban-slot'){if(!state.kanbanSelected){toast('Arraste um cartão para este horário ou toque primeiro em uma cliente.');return;}handleKanbanDrop(state.kanbanSelected.type,state.kanbanSelected.id,action.dataset.time);return;}
+    if(a==='client-detail'){clientDetail(action.dataset.id);return;}
+    if(a==='inventory-tab'){state.inventoryTab=action.dataset.tab;render();return;}
+    if(a==='new-payout'){openModal(`${modalHeader('Registrar repasse','Selecione profissional e lançamentos que serão quitados.') }<div class="modal-body"><form id="payoutForm"><div class="form-grid"><div class="form-field full"><label>Profissional</label><select><option>Marina Costa · R$ 146,25 pendentes</option><option>Paula Mendes · R$ 244,00 pendentes</option><option>Júlia Freitas · R$ 72,50 pendentes</option></select></div><div class="form-field"><label>Valor do repasse</label><input type="number" value="146.25" step="0.01"></div><div class="form-field"><label>Forma de pagamento</label><select><option>Pix</option><option>Transferência</option><option>Dinheiro</option></select></div><div class="form-field full"><label>Observação</label><input placeholder="Ex.: Repasse da primeira quinzena"></div></div><div class="modal-actions"><button type="button" class="btn" data-action="close-modal">Cancelar</button><button type="submit" class="btn btn-primary">${icons.check}Confirmar repasse</button></div></form></div>`);return;}
+    if(a==='stock-entry'||a==='stock-movement'){openModal(`${modalHeader(a==='stock-entry'?'Registrar entrada no estoque':'Nova movimentação','O movimento será registrado no histórico da unidade.') }<div class="modal-body"><form id="stockForm"><div class="form-grid"><div class="form-field full"><label>Produto</label><select>${state.products.map(p=>`<option>${safe(p.name)} · ${safe(p.type)}</option>`).join('')}</select></div><div class="form-field"><label>Tipo de movimento</label><select><option>${a==='stock-entry'?'Entrada de compra':'Ajuste de estoque'}</option><option>Perda / descarte</option><option>Devolução</option></select></div><div class="form-field"><label>Quantidade</label><input type="number" min="0.01" step="0.01" placeholder="Ex.: 5"></div><div class="form-field"><label>Custo unitário (R$)</label><input type="number" min="0" step="0.01" placeholder="0,00"></div><div class="form-field"><label>Referência / motivo</label><input placeholder="Fornecedor ou observação"></div></div><div class="modal-actions"><button type="button" class="btn" data-action="close-modal">Cancelar</button><button type="submit" class="btn btn-primary">${icons.check}Salvar movimentação</button></div></form></div>`);return;}
+    if(a==='birthday'){toast('Mensagem de aniversário: integração WhatsApp será conectada na próxima etapa.');return;}
+    if(a==='notifications'){toast('Tudo certo por aqui — você está em dia.');return;}
+    if(a==='export-clients'||a==='export-finance'||a==='commission-export'){toast('Exportação demonstrativa pronta para conectar ao relatório.');return;}
+    if(a==='team-info'){toast('A visão detalhada da equipe será configurada por unidade.');return;}
+    if(a==='edit-appointment'){toast('A edição de agendamento será adicionada no fluxo operacional.');return;}
+    if(a==='toast-report'){toast('Atendimento concluído e lançado no histórico.');return;}
+    if(a==='stock-item'||a==='inventory-history'){toast('Histórico detalhado do estoque em breve.');return;}
+    if(a==='new-service'||a==='service-edit'||a==='service-filter'){toast('Cadastro de serviços será conectado ao catálogo administrativo.');return;}
+    if(a==='client-filter'||a==='finance-period'||a==='chart-period'||a==='profit-details'||a==='commission-filter'||a==='commission-period'||a==='commission-detail'){toast('Filtro demonstrativo — dados de exemplo.');return;}
+    if(a==='client-edit'){toast('A edição da ficha será liberada no módulo de CRM.');return;}
+  });
+  document.getElementById('mobileOverlay').addEventListener('click',()=>{document.getElementById('sidebar').classList.remove('open');document.getElementById('mobileOverlay').classList.remove('visible');});
+  document.addEventListener('input',e=>{
+    if(e.target.id==='clientSearch'){const cursor=e.target.selectionStart;state.clientQuery=e.target.value;render();const next=document.getElementById('clientSearch');if(next){next.focus();next.setSelectionRange(cursor,cursor);}return;}
+    if(e.target.id==='checkoutItemAmount'){const form=document.getElementById('checkoutForm');const value=Number(e.target.value)||0;form.dataset.total=String(value);document.getElementById('checkoutTotal').textContent=money(value);updatePaymentSummary();}
+    if(e.target.classList.contains('payment-amount'))updatePaymentSummary();
+  });
+  document.addEventListener('change',e=>{if(e.target.id==='staffFilter'){const val=e.target.value;const live=state.supabaseMode&&state.authenticated;document.querySelectorAll('[data-action="appointment"]').forEach(row=>{const appt=state.appointments.find(a=>a.id===Number(row.dataset.id));const matchesAll=val==='all'||(!live&&val==='Todos profissionais');row.style.display=(!appt||matchesAll||(live?String(appt.professionalId)===val:appt.professional===val))?'':'none';});}});
+  document.addEventListener('keydown',e=>{
+    if(e.key==='Escape'){closeModal();document.getElementById('roleMenu').hidden=true;}
+    if((e.metaKey||e.ctrlKey)&&e.key.toLowerCase()==='k'){e.preventDefault();document.getElementById('globalSearch').focus();}
+    if(e.key==='Enter'&&e.target.matches('.appointment-row'))appointmentModal(e.target.dataset.id);
+    if(e.key==='Enter'&&e.target.matches('.kanban-card,.kanban-dropzone[data-time]'))e.target.click();
+    if(e.key==='Enter'&&e.target.id==='globalSearch'){e.preventDefault();state.clientQuery=e.target.value;state.page='clientes';render();const i=document.getElementById('clientSearch');if(i){i.focus();i.setSelectionRange(i.value.length,i.value.length);}}
+  });
+  document.addEventListener('submit',async e=>{
+    e.preventDefault();
+    if(e.target.id==='authForm'){
+      const form=e.target;const values=new FormData(form);const mode=form.dataset.mode;const email=String(values.get('email')||'').trim();const password=String(values.get('password')||'');
+      if(mode==='signup'){
+        const fullName=String(values.get('fullName')||'').trim();const {data,error}=await supabaseClient.auth.signUp({email,password,options:{data:{full_name:fullName},emailRedirectTo:window.location.origin}});
+        if(error){showFormError(form,friendlyError(error,'Não foi possível criar a conta.'));return;}
+        if(!data.session){renderAuthGate('confirm',`Enviamos um link de confirmação para ${email}. Abra a mensagem e depois entre com sua senha.`);return;}
+        await loadAuthenticatedWorkspace(data.session);return;
+      }
+      const {data,error}=await supabaseClient.auth.signInWithPassword({email,password});
+      if(error){showFormError(form,friendlyError(error,'Não foi possível entrar.'));return;}
+      await loadAuthenticatedWorkspace(data.session);return;
+    }
+    if(e.target.id==='businessSetupForm'){
+      try{await createFirstBusiness(e.target);}catch(error){renderAuthGate('business',friendlyError(error));}return;
+    }
+    if(e.target.id==='catalogSetupForm'){
+      try{await createInitialCatalog(e.target);}catch(error){renderAuthGate('catalog',friendlyError(error));}return;
+    }
+    if(e.target.id==='kanbanScheduleForm'){
+      const form=e.target;const data=new FormData(form);const waitlistId=Number(form.dataset.waitlistId);const request=state.waitlist.find(item=>item.id===waitlistId);const client=request&&state.clients.find(item=>item.id===request.clientId);const live=state.supabaseMode&&state.authenticated;
+      const serviceValue=String(data.get('service')||'');const service=live?state.services.find(item=>item.backendId===serviceValue):demoServiceOptions.find(item=>item.name===serviceValue);
+      const professionalValue=String(data.get('professional')||'');const professional=live?state.professionals.find(item=>item.backendId===professionalValue):{name:professionalValue,backendId:professionalValue};const time=String(data.get('time')||'');
+      if(!request||!client||!service||!professional?.name||!time){showFormError(form,'Confira cliente, serviço, profissional e horário.');return;}
+      const start=timeToMinutes(time);const end=start+service.duration;if(end>1080){showFormError(form,'O atendimento ultrapassaria o horário de fechamento às 18:00.');return;}
+      const collision=state.appointments.some(other=>other.professional===professional.name&&!['Finalizado','Faltou','Cancelado'].includes(other.status)&&start<timeToMinutes(other.end)&&end>timeToMinutes(other.time));
+      if(collision){showFormError(form,`Conflito: ${professional.name} já tem um atendimento nesse intervalo.`);return;}
+      if(live){
+        const note=String(data.get('notes')||'').trim();if(note){const noteResult=await supabaseClient.from('waitlist_entries').update({notes:note}).eq('id',request.backendId);if(noteResult.error){showFormError(form,friendlyError(noteResult.error));return;}}
+        const {error}=await supabaseClient.rpc('schedule_waitlist_entry',{p_waitlist_entry_id:request.backendId,p_professional_id:professional.backendId,p_starts_at:zonedDateTimeToIso(dateKeyInZone(state.date),time),p_service_id:service.backendId});
+        if(error){showFormError(form,friendlyError(error,'Não foi possível confirmar o encaixe.'));return;}
+        state.kanbanSelected=null;state.calendarView='kanban';state.page='agenda';closeModal();await refreshAgenda();toast(`${client.name} agendada para ${time} com ${professional.name}.`);return;
+      }
+      state.appointments.push({id:Date.now(),time,end:minutesToTime(end),client:client.name,service:service.name,professional:professional.name,status:'Agendado',amount:service.price,initials:client.initials,tone:client.tone,notes:String(data.get('notes')||'')});
+      state.waitlist=state.waitlist.filter(item=>item.id!==waitlistId);state.kanbanSelected=null;state.calendarView='kanban';state.page='agenda';closeModal();render();toast(`${client.name} agendada para ${time} com ${professional.name}.`);return;
+    }
+    if(e.target.id==='waitlistForm'){
+      const form=e.target;const data=new FormData(form);const clientId=Number(data.get('clientId'));const client=state.clients.find(item=>item.id===clientId);const live=state.supabaseMode&&state.authenticated;
+      const serviceValue=String(data.get('service')||'');const service=live?state.services.find(item=>item.backendId===serviceValue):demoServiceOptions.find(item=>item.name===serviceValue);
+      const professionalValue=String(data.get('professional')||'');const pro=live?state.professionals.find(item=>item.backendId===professionalValue):{name:professionalValue,backendId:professionalValue};const preference=String(data.get('preference')||'any');
+      if(!client||!service||state.waitlist.some(item=>item.clientId===clientId)){showFormError(form,'Selecione uma cliente disponível e um serviço.');return;}
+      if(live){
+        const {error}=await supabaseClient.from('waitlist_entries').insert({business_id:state.businessId,branch_id:state.branchId,client_id:client.backendId,service_id:service.backendId,preferred_professional_id:pro?.backendId||null,time_preference:preference,created_by:state.session.user.id});
+        if(error){showFormError(form,friendlyError(error,'Não foi possível adicionar à fila.'));return;}
+        state.kanbanSelected=null;state.calendarView='kanban';state.page='agenda';closeModal();await refreshAgenda();toast(`${client.name} adicionada à fila de encaixe.`);return;
+      }
+      const preferenceLabel={any:'Qualquer horário',morning:'Manhã',afternoon:'Tarde',evening:'Noite'}[preference]||'Qualquer horário';
+      state.waitlist.push({id:Date.now(),clientId,service:service.name,preference:preferenceLabel,preferredProfessional:pro?.name||''});state.kanbanSelected=null;state.calendarView='kanban';closeModal();render();toast(`${client.name} adicionada à fila de encaixe.`);return;
+    }
+    if(e.target.id==='appointmentForm'){
+      const form=e.target;const data=new FormData(form);const live=state.supabaseMode&&state.authenticated;const client=state.clients.find(item=>item.id===Number(data.get('client')));
+      const serviceValue=String(data.get('service')||'');const service=live?state.services.find(item=>item.backendId===serviceValue):demoServiceOptions.find(item=>item.name===serviceValue);
+      const professionalValue=String(data.get('professional')||'');const professional=live?state.professionals.find(item=>item.backendId===professionalValue):{name:professionalValue,backendId:professionalValue};
+      const time=String(data.get('time')||'');const dateValue=String(data.get('date')||'');
+      if(!client||!service||!professional?.name||!time||!dateValue){showFormError(form,'Confira cliente, serviço, profissional, data e horário.');return;}
+      const start=timeToMinutes(time);const end=start+service.duration;if(start<480||end>1080){showFormError(form,'Os atendimentos devem ocorrer entre 08:00 e 18:00.');return;}
+      if(live){
+        const {error}=await supabaseClient.rpc('create_appointment',{p_branch_id:state.branchId,p_client_id:client.backendId,p_service_id:service.backendId,p_professional_id:professional.backendId,p_starts_at:zonedDateTimeToIso(dateValue,time),p_notes:String(data.get('notes')||'')});
+        if(error){showFormError(form,friendlyError(error,'Não foi possível criar o agendamento.'));return;}
+        state.date=new Date(`${dateValue}T12:00:00`);state.page='agenda';closeModal();await refreshAgenda();toast(`${client.name} agendada para ${time} com ${professional.name}.`);return;
+      }
+      const sameDay=dateValue===dateKeyInZone(state.date,state.timeZone);
+      const collision=sameDay&&state.appointments.some(other=>other.professional===professional.name&&!['Finalizado','Faltou','Cancelado'].includes(other.status)&&start<timeToMinutes(other.end)&&end>timeToMinutes(other.time));
+      if(collision){showFormError(form,`Conflito: ${professional.name} já tem um atendimento nesse intervalo.`);return;}
+      state.date=new Date(`${dateValue}T12:00:00`);state.appointments.push({id:Date.now(),time,end:minutesToTime(end),client:client.name,service:service.name,professional:professional.name,status:'Agendado',amount:service.price,initials:client.initials,tone:client.tone,notes:String(data.get('notes')||'')});closeModal();state.page='agenda';render();toast('Agendamento criado com sucesso.');return;
+    }
+    if(e.target.id==='clientForm'){
+      const form=e.target;const data=new FormData(form);const name=String(data.get('name')||'').trim();const rawPhone=String(data.get('phone')||'').trim();const live=state.supabaseMode&&state.authenticated;
+      if(live){
+        const phone=normalizeBrazilPhone(rawPhone);if(!phone){showFormError(form,'Informe um telefone brasileiro com DDD (10 ou 11 dígitos).');return;}
+        const {error}=await supabaseClient.from('clients').insert({business_id:state.businessId,name,phone_e164:phone,email:String(data.get('email')||'').trim()||null,birth_date:String(data.get('birthday')||'')||null,notes:String(data.get('notes')||'').trim()||null,marketing_opt_in:false});
+        if(error){showFormError(form,friendlyError(error,'Não foi possível salvar a cliente.'));return;}
+        closeModal();state.page='clientes';state.clientQuery='';await refreshAgenda();toast(`${name} foi adicionada à sua base.`);return;
+      }
+      state.clients.unshift({id:Date.now(),name,phone:rawPhone,email:String(data.get('email')||'—'),last:'Ainda sem atendimentos',lastDate:'—',next:'—',tag:'Nova cliente',initials:initials(name),tone:1,allergy:'Nenhuma informada',formula:'—',visits:0});closeModal();state.page='clientes';state.clientQuery='';render();toast(`${name} foi adicionada à sua base.`);return;
+    }
+    if(e.target.id==='checkoutForm'){
+      if(state.supabaseMode&&state.authenticated){toast('O fluxo de caixa ainda não está ativado.');closeModal();return;}
+      const total=Number(e.target.dataset.total)||0;const amounts=[...document.querySelectorAll('.payment-amount')].map(i=>Number(i.value)||0);const sum=amounts.reduce((a,b)=>a+b,0);if(Math.abs(sum-total)>.009){document.getElementById('paymentError').classList.add('show');return;}const appt=state.appointments.find(x=>x.id===state.selectedAppointment);if(appt)appt.status='Finalizado';closeModal();render();toast(`Comanda de ${money(total)} fechada. Comissão, estoque e caixa atualizados.`);return;
+    }
+    if(e.target.id==='payoutForm'){closeModal();toast('Repasse registrado no extrato do profissional.');return;}
+    if(e.target.id==='stockForm'){closeModal();toast('Movimentação de estoque registrada.');return;}
+  });
+  function updatePaymentSummary(){
+    const form=document.getElementById('checkoutForm');if(!form)return;const total=Number(form.dataset.total)||0;const sum=[...document.querySelectorAll('.payment-amount')].reduce((s,i)=>s+(Number(i.value)||0),0);const node=document.getElementById('paymentSum');if(node)node.textContent=money(sum);const error=document.getElementById('paymentError');if(error&&Math.abs(sum-total)<=.009)error.classList.remove('show');
+  }
+  bootApplication();
+</script>
+</body>
+</html>
