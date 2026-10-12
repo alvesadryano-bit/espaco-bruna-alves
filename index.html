@@ -50,6 +50,7 @@
     .nav-link:hover { color:#fff; background:rgba(255,255,255,.07); }
     .nav-link.active { color:#fff; background:#2c5148; box-shadow:inset 2px 0 #d9c69b; }
     .nav-link .nav-badge { margin-left:auto; min-width:21px; height:20px; display:grid; place-items:center; padding:0 5px; border-radius:7px; color:#d7e8de; background:rgba(255,255,255,.10); font-size:10px; }
+    .nav-link .nav-status { margin-left:auto; color:#aec0b5; font-size:7px; font-weight:650; letter-spacing:.1px; white-space:nowrap; }
     .sidebar-spacer { flex:1; }
     .sidebar-help { display:flex; gap:10px; align-items:center; margin:0 4px 16px; padding:13px; border-radius:12px; color:#b8c9c0; background:rgba(255,255,255,.055); }
     .sidebar-help svg { color:#dfc99a; flex:none; }
@@ -426,7 +427,7 @@
     .auth-loading { color:#718077;text-align:center;font-size:12px; }
   </style>
 </head>
-<body>
+<body class="auth-required">
   <div class="mobile-overlay" id="mobileOverlay"></div>
   <aside class="sidebar" id="sidebar">
     <div class="brand">
@@ -445,9 +446,9 @@
     </nav>
     <div class="nav-section">Gestão</div>
     <nav class="nav-list" aria-label="Gestão">
-      <button class="nav-link" data-page="estoque"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="m12 3 9 5-9 5-9-5 9-5Z"/><path d="m3 12 9 5 9-5M3 16l9 5 9-5M12 13v8"/></svg>Estoque <span class="nav-badge">2</span></button>
-      <button class="nav-link" data-page="financeiro" data-admin-only="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="m19 9-5 5-4-4-5 5"/><path d="M16 9h3v3"/></svg>Financeiro</button>
-      <button class="nav-link" data-page="comissoes"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M16 8h-5.5a2.5 2.5 0 0 0 0 5H13a2.5 2.5 0 0 1 0 5H8M12 6v2m0 10v2"/></svg>Comissões</button>
+      <button class="nav-link" data-page="estoque"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="m12 3 9 5-9 5-9-5 9-5Z"/><path d="m3 12 9 5 9-5M3 16l9 5 9-5M12 13v8"/></svg>Estoque <span class="nav-badge">2</span><span class="nav-status" style="display:none">Em configuração</span></button>
+      <button class="nav-link" data-page="financeiro" data-admin-only="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="m19 9-5 5-4-4-5 5"/><path d="M16 9h3v3"/></svg>Financeiro<span class="nav-status" style="display:none">Em configuração</span></button>
+      <button class="nav-link" data-page="comissoes"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M16 8h-5.5a2.5 2.5 0 0 0 0 5H13a2.5 2.5 0 0 1 0 5H8M12 6v2m0 10v2"/></svg>Comissões<span class="nav-status" style="display:none">Em configuração</span></button>
     </nav>
     <div class="sidebar-spacer"></div>
     <div class="sidebar-help"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><path d="M9.5 9a2.5 2.5 0 1 1 4.5 1.5c-1.2 1-2 1.5-2 3M12 17h.01"/></svg><div><strong>Precisa de ajuda?</strong><small>Fale com nosso suporte</small></div></div>
@@ -466,7 +467,7 @@
   </main>
   <div id="modalRoot"></div>
   <div class="toast-container" id="toastContainer" aria-live="polite"></div>
-  <div class="auth-root" id="authRoot" hidden></div>
+  <div class="auth-root" id="authRoot"><div class="auth-card"><div class="auth-brand">ESPAÇO <span>BRUNA ALVES</span></div><p class="auth-loading">Conectando ao Espaço Bruna Alves…</p></div></div>
 <script type="module">
   import { createClient } from '@supabase/supabase-js';
 
@@ -684,14 +685,14 @@
   }
   function render(){
     const live=state.supabaseMode&&state.authenticated;
-    if(live&&['estoque','financeiro','comissoes'].includes(state.page))state.page='agenda';
     if(live&&state.role==='Profissional'&&state.calendarView==='kanban')state.calendarView='day';
     document.querySelectorAll('.nav-link').forEach(btn=>{
       const pg=btn.dataset.page;btn.classList.toggle('active',pg===state.page);
       const recepHidden=state.role==='Recepcionista'&&['estoque','financeiro','comissoes'].includes(pg);
       const profHidden=state.role==='Profissional'&&['estoque','financeiro'].includes(pg);
-      const liveHidden=live&&['estoque','financeiro','comissoes'].includes(pg);
-      btn.style.display=(recepHidden||profHidden||liveHidden)?'none':'flex';
+      btn.style.display=(recepHidden||profHidden)?'none':'flex';
+      const status=btn.querySelector('.nav-status');if(status)status.style.display=live?'inline-flex':'none';
+      const moduleBadge=btn.querySelector('.nav-badge');if(moduleBadge&&pg!=='agenda')moduleBadge.style.display=live?'none':'grid';
     });
     const agendaBadge=document.querySelector('[data-page="agenda"] .nav-badge');
     if(agendaBadge){
@@ -716,7 +717,8 @@
     const pageNames={agenda:'AGENDA',clientes:'CLIENTES',servicos:'SERVIÇOS',estoque:'ESTOQUE',financeiro:'FINANCEIRO',comissoes:'COMISSÕES'};
     document.getElementById('breadcrumbPage').textContent=pageNames[state.page]||'AGENDA';
     const pages={agenda:renderAgenda,clientes:renderClients,servicos:renderServices,estoque:renderInventory,financeiro:renderFinance,comissoes:renderCommissions};
-    document.getElementById('pageContent').innerHTML=(pages[state.page]||renderAgenda)();
+    const managementPages=['estoque','financeiro','comissoes'];
+    document.getElementById('pageContent').innerHTML=live&&managementPages.includes(state.page)?renderLiveManagementPage(state.page):(pages[state.page]||renderAgenda)();
     document.getElementById('mobileOverlay').classList.remove('visible');document.getElementById('sidebar').classList.remove('open');
   }
   function metric(label,value,foot,icon,style=''){
@@ -801,6 +803,15 @@
     }
     const rows=serviceRows.map(s=>`<tr><td><div class="table-person"><div class="avatar" style="background:${s[6]};color:${s[7]}">${icons.spark}</div><div><strong>${s[0]}</strong><small>${s[1]}</small></div></div></td><td>${s[2]}</td><td><strong style="color:#495a50;font-size:10px">${money(s[3])}</strong></td><td><span class="tag">${s[4]} comissão</span></td><td><span class="tag">Ativo</span></td><td><button class="table-action" data-action="service-edit" aria-label="Editar serviço">⋯</button></td></tr>`).join('');
     return `<div class="page-heading"><div><div class="eyebrow"><span class="eyebrow-dot"></span>Catálogo</div><h1>Serviços</h1><p class="page-subtitle">Seu menu de experiências, valores e regras de comissão.</p></div><div class="heading-actions">${state.role==='Administrador'?'<button class="btn btn-primary" data-action="new-service">'+icons.plus+'Novo serviço</button>':''}</div></div><div class="metric-grid">${metric('Serviços ativos','18','em 5 categorias',icons.spark)}${metric('Faixa de preço',money(85)+' – '+money(520),'por atendimento',icons.wallet,'peach')}${metric('Comissão média','43%','entre os serviços',icons.people,'lavender')}${metric('Mais agendado','Corte feminino','esta semana',icons.calendar,'blue')}</div><div class="page-toolbar"><div class="toolbar-left"><label class="search-box">${icons.search}<input id="serviceSearch" type="search" placeholder="Buscar serviço"></label><button class="btn btn-sm" data-action="service-filter">Todas as categorias⌄</button></div><span class="tag">Comissões atualizadas</span></div><div class="card table-card"><table class="data-table"><thead><tr><th>Serviço</th><th>Duração</th><th>Valor padrão</th><th>Regra de comissão</th><th>Status</th><th></th></tr></thead><tbody>${rows}</tbody></table><div class="table-footer"><span>Exibindo 6 serviços de 18</span><span>Valores em R$</span></div></div>`;
+  }
+  function renderLiveManagementPage(page){
+    const modules={
+      estoque:{title:'Estoque',description:'Produtos de uso interno, revenda e movimentações da unidade.',icon:icons.box},
+      financeiro:{title:'Financeiro',description:'Entradas, despesas, caixa e margem dos serviços.',icon:icons.wallet},
+      comissoes:{title:'Comissões',description:'Valores gerados, pendentes e pagos à equipe.',icon:icons.spark}
+    };
+    const module=modules[page]||modules.estoque;
+    return `<div class="page-heading"><div><div class="eyebrow"><span class="eyebrow-dot"></span>Área de gestão</div><h1>${module.title}</h1><p class="page-subtitle">${module.description}</p></div><div class="heading-actions"><span class="tag gold">Em configuração</span></div></div><div class="card" style="max-width:920px;padding:26px 28px"><div style="display:flex;align-items:center;gap:14px"><span class="metric-icon" style="width:42px;height:42px">${module.icon}</span><div><div class="card-title">A área de ${module.title.toLowerCase()} está disponível</div><div class="card-subtitle">Estamos conectando este módulo aos dados reais do Espaço Bruna Alves.</div></div></div><div style="margin-top:19px;padding:14px 16px;border:1px solid #e8eee8;border-radius:11px;background:#f7faf7;color:#718078;font-size:10px;line-height:1.6"><strong style="color:#53665a">Sem números de demonstração.</strong> Os indicadores e registros aparecerão aqui quando a integração com o Supabase estiver pronta.</div></div>`;
   }
   function renderInventory(){
     const internal=state.products.filter(p=>p.type===state.inventoryTab);
@@ -1103,5 +1114,5 @@
   }
   bootApplication();
 </script>
-<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a49945349e34f177',t:'MTc5MTg0MTMwMw=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+</body>
 </html>
