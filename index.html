@@ -693,6 +693,12 @@
       const liveHidden=live&&['estoque','financeiro','comissoes'].includes(pg);
       btn.style.display=(recepHidden||profHidden||liveHidden)?'none':'flex';
     });
+    const agendaBadge=document.querySelector('[data-page="agenda"] .nav-badge');
+    if(agendaBadge){
+      const agendaCount=live?state.appointments.filter(a=>!['Finalizado','Faltou','Cancelado'].includes(a.status)&&(state.role!=='Profissional'||a.professionalBackendId===state.currentProfessionalId)).length:4;
+      agendaBadge.textContent=String(agendaCount);
+      agendaBadge.style.display=live&&agendaCount===0?'none':'grid';
+    }
     const who=state.currentName||(state.role==='Recepcionista'?'Ana Oliveira':state.role==='Administrador'?'Bruna Alves':'Marina Costa');
     const roleLabel=state.role==='Administrador'?'Administradora':state.role;
     const avatar=initials(who);
@@ -1097,5 +1103,5 @@
   }
   bootApplication();
 </script>
-</body>
+<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a49945349e34f177',t:'MTc5MTg0MTMwMw=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>
