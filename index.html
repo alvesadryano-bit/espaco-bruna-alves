@@ -466,7 +466,7 @@
       <div class="topbar-actions">
         <label class="global-search"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/></svg><input id="globalSearch" type="search" placeholder="Buscar cliente, serviço..." aria-label="Buscar"><span class="search-shortcut">⌘ K</span></label>
         <button class="icon-button" data-action="notifications" aria-label="Notificações"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9M10 21h4"/></svg><span class="notification-dot"></span></button>
-        <div class="role-wrap"><button class="role-button" data-action="toggle-role-menu" aria-label="Alternar perfil"><div class="avatar" id="topAvatar">MC</div><span><span class="role-name" id="topUserName">Bruna Alves</span><span class="role-label" id="topUserRole">Administradora</span></span><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#8e9b93" stroke-width="1.8"><path d="m7 10 5 5 5-5"/></svg></button><div class="role-menu" id="roleMenu" hidden><p>Visualizar como</p><button class="role-option selected" data-role="Administrador"><span>✦</span>Administrador</button><button class="role-option" data-role="Profissional"><span>◉</span>Profissional</button><button class="role-option" data-role="Recepcionista"><span>▣</span>Recepcionista</button><button class="role-option" data-action="auth-logout" hidden><span>↪</span>Sair da conta</button></div></div>
+        <div class="role-wrap"><button class="role-button" data-action="toggle-role-menu" aria-label="Alternar perfil"><div class="avatar" id="topAvatar">MC</div><span><span class="role-name" id="topUserName">Bruna Alves</span><span class="role-label" id="topUserRole">Administradora</span></span><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#8e9b93" stroke-width="1.8"><path d="m7 10 5 5 5-5"/></svg></button><div class="role-menu" id="roleMenu" hidden><p>Visualizar como</p><button class="role-option selected" data-role="Administrador"><span>✦</span>Administrador</button><button class="role-option" data-role="Profissional"><span>◉</span>Profissional</button><button class="role-option" data-role="Recepcionista"><span>▣</span>Recepcionista</button><button class="role-option" data-action="auth-change-password" hidden><span>↻</span>Alterar minha senha</button><button class="role-option" data-action="auth-logout" hidden><span>↪</span>Sair da conta</button></div></div>
       </div>
     </header>
     <section class="content" id="pageContent" aria-live="polite"></section>
@@ -540,7 +540,8 @@
     inventoryProducts:[], stockMovements:[], checkouts:[], checkoutPayments:[], expenses:[],
     commissionEntries:[], commissionPayouts:[], commissionRules:[],
     usersLoaded:false, usersLoading:false, usersError:'', businessUsers:[], userInvitations:[],
-    pendingInvitationToken:'', invitationDetails:null
+    pendingInvitationToken:'', invitationDetails:null,
+    passwordRecovery:false, authListenerRegistered:false
   };
   const demoServiceOptions=[
     {name:'Corte feminino',duration:45,price:145},
@@ -579,7 +580,16 @@
     const header=`<div class="auth-brand">ESPAÇO <span>BRUNA ALVES</span></div>`;
     if(view==='loading'){root.innerHTML=`<div class="auth-card"><div class="auth-brand">ESPAÇO <span>BRUNA ALVES</span></div><p class="auth-loading">Conectando ao Espaço Bruna Alves…</p></div>`;return;}
     if(view==='login'){
-      root.innerHTML=`<div class="auth-card">${header}<h1>Bem-vinda de volta</h1><p class="auth-subtitle">Entre para acessar a agenda e os dados autorizados da sua empresa.</p>${alert}<form id="authForm" data-mode="login"><div class="form-field"><label>E-mail</label><input name="email" type="email" autocomplete="email" required></div><div class="form-field"><label>Senha</label><input name="password" type="password" autocomplete="current-password" minlength="8" required></div><button class="btn btn-primary" type="submit">Entrar</button></form><p class="auth-note">Novos acessos são criados pela administradora na área Usuários.</p></div>`;return;
+      root.innerHTML=`<div class="auth-card">${header}<h1>Bem-vinda de volta</h1><p class="auth-subtitle">Entre para acessar a agenda e os dados autorizados da sua empresa.</p>${alert}<form id="authForm" data-mode="login"><div class="form-field"><label>E-mail</label><input name="email" type="email" autocomplete="email" required></div><div class="form-field"><label>Senha</label><input name="password" type="password" autocomplete="current-password" minlength="8" required></div><button class="btn btn-primary" type="submit">Entrar</button></form><p class="auth-switch"><button type="button" data-action="auth-forgot-password">Esqueci minha senha</button></p><p class="auth-note">Novos acessos são criados pela administradora na área Usuários.</p></div>`;return;
+    }
+    if(view==='forgot-password'){
+      root.innerHTML=`<div class="auth-card">${header}<h1>Recuperar senha</h1><p class="auth-subtitle">Informe seu e-mail e enviaremos um link seguro para você criar uma nova senha.</p>${alert}<form id="passwordRecoveryRequestForm"><div class="form-field"><label>E-mail da conta</label><input name="email" type="email" autocomplete="email" required></div><button class="btn btn-primary" type="submit">Enviar link seguro</button></form><p class="auth-switch"><button type="button" data-action="auth-mode-login">Voltar ao login</button></p><p class="auth-note">Por segurança, a confirmação é a mesma mesmo quando o e-mail não está cadastrado.</p></div>`;return;
+    }
+    if(view==='recovery-sent'){
+      root.innerHTML=`<div class="auth-card">${header}<h1>Confira seu e-mail</h1><p class="auth-subtitle">Se existir uma conta para o endereço informado, o link seguro chegará em instantes. Confira também a pasta de spam.</p>${alert}<button type="button" class="btn btn-primary" data-action="auth-mode-login">Voltar ao login</button><p class="auth-note">O link é pessoal. Abra-o no dispositivo em que deseja criar a nova senha.</p></div>`;return;
+    }
+    if(view==='password-reset'){
+      root.innerHTML=`<div class="auth-card">${header}<h1>Criar nova senha</h1><p class="auth-subtitle">Defina uma nova senha antes de continuar para a plataforma.</p>${alert}<form id="passwordResetForm"><div class="form-field"><label>Nova senha</label><input name="newPassword" type="password" autocomplete="new-password" minlength="8" required></div><div class="form-field"><label>Confirme a nova senha</label><input name="confirmPassword" type="password" autocomplete="new-password" minlength="8" required></div><button class="btn btn-primary" type="submit">Salvar nova senha</button></form><p class="auth-switch"><button type="button" data-action="auth-cancel-password-reset">Cancelar e voltar ao login</button></p><p class="auth-note">Use pelo menos 8 caracteres e não compartilhe sua senha.</p></div>`;return;
     }
     if(view==='invite'){
       const invitation=state.invitationDetails;if(!invitation){renderAuthGate('login','Convite inválido ou expirado.');return;}
@@ -596,6 +606,28 @@
       root.innerHTML=`<div class="auth-card">${header}<h1>Confirme seu e-mail</h1><p class="auth-subtitle">${safe(message||'Enviamos um link de confirmação. Abra o e-mail e depois volte para entrar.')}</p><button type="button" class="btn btn-primary" data-action="auth-mode-login">Voltar ao login</button><p class="auth-note">Se não encontrar a mensagem, confira a pasta de spam.</p></div>`;return;
     }
     root.innerHTML=`<div class="auth-card">${header}<h1>Não foi possível conectar</h1>${alert}<button type="button" class="btn btn-primary" data-action="auth-retry">Tentar novamente</button></div>`;
+  }
+  function passwordResetRedirect(){return `${window.location.origin}${window.location.pathname}?password-reset=1`;}
+  function passwordRecoveryFromContext(){
+    const query=new URLSearchParams(window.location.search).get('password-reset')==='1';let stored=false;try{stored=localStorage.getItem('passwordRecoveryPending')==='1';}catch{}
+    return query||stored||state.passwordRecovery;
+  }
+  function clearPasswordRecoveryContext(){
+    state.passwordRecovery=false;try{localStorage.removeItem('passwordRecoveryPending');}catch{}
+    const params=new URLSearchParams(window.location.search);if(params.has('password-reset'))history.replaceState({},'',window.location.pathname);
+  }
+  function registerAuthListener(){
+    if(!supabaseClient||state.authListenerRegistered)return;state.authListenerRegistered=true;
+    supabaseClient.auth.onAuthStateChange((event,session)=>{
+      if(event==='PASSWORD_RECOVERY'){
+        if(!session){clearPasswordRecoveryContext();state.session=null;renderAuthGate('login','Este link de redefinição expirou. Solicite um novo.');return;}
+        state.passwordRecovery=true;state.session=session;try{localStorage.setItem('passwordRecoveryPending','1');}catch{}
+        renderAuthGate('password-reset');return;
+      }
+      if(event==='SIGNED_OUT'){
+        clearPasswordRecoveryContext();state.authenticated=false;state.session=null;state.businessId=null;state.branchId=null;state.clients=[];state.appointments=[];state.waitlist=[];state.managementLoaded=false;state.inventoryProducts=[];state.stockMovements=[];state.checkouts=[];state.checkoutPayments=[];state.expenses=[];state.commissionEntries=[];state.commissionPayouts=[];state.commissionRules=[];state.usersLoaded=false;state.businessUsers=[];state.userInvitations=[];renderAuthGate(state.invitationDetails?'invite':'login');
+      }
+    });
   }
   function invitationTokenFromContext(){
     const queryToken=new URLSearchParams(window.location.search).get('invite')||'';
@@ -630,24 +662,25 @@
       if(import.meta.env.DEV&&demoPreview){state.supabaseMode=false;if(managementPreview){seedManagementPreview();state.page='estoque';}document.body.classList.remove('auth-required');document.getElementById('authRoot').hidden=true;render();return;}
       state.supabaseMode=true;renderAuthGate('issue','Supabase não configurado. Defina VITE_SUPABASE_URL e VITE_SUPABASE_PUBLISHABLE_KEY para habilitar os dados reais.');return;
     }
-    state.supabaseMode=true;renderAuthGate('loading');
-    const token=invitationTokenFromContext();
+    state.supabaseMode=true;registerAuthListener();renderAuthGate('loading');
+    const recoveryContext=passwordRecoveryFromContext();const token=recoveryContext?'':invitationTokenFromContext();
     if(token){
       state.pendingInvitationToken=token;try{localStorage.setItem('pendingInvitationToken',token);}catch{}
       try{state.invitationDetails=await loadInvitationDetails(token);}catch(error){renderAuthGate('login','Não foi possível validar o convite: '+error.message);return;}
       if(!state.invitationDetails){clearInvitationContext();renderAuthGate('login','Este convite é inválido, expirou ou já foi utilizado.');return;}
     }
     const {data,error}=await supabaseClient.auth.getSession();
-    if(error){renderAuthGate('login','Falha ao iniciar sessão: '+error.message);return;}
+    if(error){if(recoveryContext)clearPasswordRecoveryContext();renderAuthGate('login','Falha ao iniciar sessão: '+error.message);return;}
     if(data.session){
+      if(recoveryContext||state.passwordRecovery){state.passwordRecovery=true;state.session=data.session;try{localStorage.setItem('passwordRecoveryPending','1');}catch{}renderAuthGate('password-reset');return;}
       if(token&&!(await acceptPendingInvitation(data.session)))return;
       await loadAuthenticatedWorkspace(data.session);
-    }else if(token&&state.invitationDetails)renderAuthGate('invite');
+    }else if(recoveryContext){clearPasswordRecoveryContext();renderAuthGate('login','Este link de redefinição expirou. Solicite um novo.');}
+    else if(token&&state.invitationDetails)renderAuthGate('invite');
     else renderAuthGate('login');
-    supabaseClient.auth.onAuthStateChange((event)=>{if(event==='SIGNED_OUT'){state.authenticated=false;state.session=null;state.businessId=null;state.branchId=null;state.clients=[];state.appointments=[];state.waitlist=[];state.managementLoaded=false;state.inventoryProducts=[];state.stockMovements=[];state.checkouts=[];state.checkoutPayments=[];state.expenses=[];state.commissionEntries=[];state.commissionPayouts=[];state.commissionRules=[];state.usersLoaded=false;state.businessUsers=[];state.userInvitations=[];renderAuthGate(state.invitationDetails?'invite':'login');}});
   }
   async function loadAuthenticatedWorkspace(session){
-    state.session=session;
+    state.session=session;if(passwordRecoveryFromContext()){state.passwordRecovery=true;renderAuthGate('password-reset');return;}
     const profileResult=await supabaseClient.from('profiles').select('display_name').eq('id',session.user.id).maybeSingle();
     if(profileResult.error){renderAuthGate('login','Não foi possível carregar o perfil: '+profileResult.error.message);return;}
     state.currentName=profileResult.data?.display_name||session.user.user_metadata?.full_name||session.user.email?.split('@')[0]||'Administradora';
@@ -664,6 +697,7 @@
     state.date=new Date();state.appointments=[];state.waitlist=[];state.clients=[];state.products=[];
     try{await loadSupabaseAgenda();}catch(error){state.authenticated=false;renderAuthGate('issue',error.message||'Falha ao carregar os dados.');return;}
     await Promise.all([loadManagementData(),state.role==='Administrador'?loadUsersData():Promise.resolve()]);
+    if(state.passwordRecovery){renderAuthGate('password-reset');return;}
     document.body.classList.remove('auth-required');document.getElementById('authRoot').hidden=true;render();
   }
   async function loadSupabaseAgenda(){
@@ -833,6 +867,7 @@
     const roleMenu=document.getElementById('roleMenu');
     roleMenu.querySelector('p').textContent=live?'Sessão':'Visualizar como';
     roleMenu.querySelectorAll('[data-role]').forEach(button=>button.hidden=live);
+    const changePassword=roleMenu.querySelector('[data-action="auth-change-password"]');if(changePassword)changePassword.hidden=!live;
     const logout=roleMenu.querySelector('[data-action="auth-logout"]');if(logout)logout.hidden=!live;
     document.querySelectorAll('.role-option[data-role]').forEach(o=>o.classList.toggle('selected',o.dataset.role===state.role));
     document.getElementById('currentBranchName').textContent=live?state.branchName:'Unidade principal';
@@ -991,7 +1026,7 @@
     const members=state.businessUsers;const invitations=state.userInvitations;const pending=invitations.filter(item=>item.status==='pending');
     const roleTag=role=>role==='admin'?'gold':role==='professional'?'blue':'';
     const scope=item=>item.role==='admin'?'Todas as unidades':item.role==='professional'?(item.professional_name||'Profissional não definido'):(item.branch_name||state.branchName);
-    const memberRows=members.map(item=>`<tr><td><div class="table-person"><div class="avatar">${safe(initials(item.display_name||item.email))}</div><div><strong>${safe(item.display_name||item.email)}</strong><small>${safe(item.email)}</small></div></div></td><td><span class="tag ${roleTag(item.role)}">${safe(accessRoleLabel(item.role))}</span><span class="access-scope">${safe(scope(item))}</span></td><td><span class="status-pill done">Ativo</span></td><td>${dateTimeFmt(item.created_at)}</td><td><div class="user-actions"><button class="table-action" data-action="edit-user-access" data-id="${safe(item.record_id)}" aria-label="Editar acesso" title="Editar acesso">✎</button><button class="table-action" data-action="remove-user-access" data-id="${safe(item.record_id)}" aria-label="Remover acesso" title="Remover acesso" ${item.is_current_user?'disabled':''}>×</button></div></td></tr>`).join('');
+    const memberRows=members.map(item=>`<tr><td><div class="table-person"><div class="avatar">${safe(initials(item.display_name||item.email))}</div><div><strong>${safe(item.display_name||item.email)}</strong><small>${safe(item.email)}</small></div></div></td><td><span class="tag ${roleTag(item.role)}">${safe(accessRoleLabel(item.role))}</span><span class="access-scope">${safe(scope(item))}</span></td><td><span class="status-pill done">Ativo</span></td><td>${dateTimeFmt(item.created_at)}</td><td><div class="user-actions"><button class="table-action" data-action="edit-user-access" data-id="${safe(item.record_id)}" aria-label="Editar acesso" title="Editar acesso">✎</button><button class="table-action" data-action="send-user-password-reset" data-id="${safe(item.record_id)}" aria-label="Enviar redefinição de senha" title="Enviar redefinição de senha">✉</button><button class="table-action" data-action="remove-user-access" data-id="${safe(item.record_id)}" aria-label="Remover acesso" title="Remover acesso" ${item.is_current_user?'disabled':''}>×</button></div></td></tr>`).join('');
     const invitationRows=invitations.map(item=>`<tr><td><div class="table-person"><div class="avatar">${safe(initials(item.display_name||item.email))}</div><div><strong>${safe(item.display_name||item.email)}</strong><small>${safe(item.email)} · convite ainda não aceito</small></div></div></td><td><span class="tag ${roleTag(item.role)}">${safe(accessRoleLabel(item.role))}</span><span class="access-scope">${safe(scope(item))}</span></td><td><span class="tag ${item.status==='pending'?'gold':'gray'}">${item.status==='pending'?'Convite pendente':'Expirado'}</span></td><td>${item.expires_at?dateTimeFmt(item.expires_at):'—'}</td><td><div class="user-actions">${item.status==='pending'?`<button class="table-action" data-action="copy-user-invite" data-id="${safe(item.record_id)}" aria-label="Copiar convite" title="Copiar convite">⧉</button>`:''}<button class="table-action" data-action="revoke-user-invite" data-id="${safe(item.record_id)}" aria-label="Revogar convite" title="Revogar convite">×</button></div></td></tr>`).join('');
     const rows=memberRows+invitationRows;
     return `<div class="page-heading"><div><div class="eyebrow"><span class="eyebrow-dot"></span>Controle de acesso</div><h1>Usuários</h1><p class="page-subtitle">Crie convites e defina o perfil de cada pessoa da equipe.</p></div><div class="heading-actions"><button class="btn" data-action="refresh-users">Atualizar</button><button class="btn btn-primary" data-action="new-user-invite">${icons.plus}Novo usuário</button></div></div><div class="metric-grid">${metric('Usuários ativos',String(members.length).padStart(2,'0'),'acessos vinculados',icons.people)}${metric('Administradores',String(members.filter(item=>item.role==='admin').length).padStart(2,'0'),'acesso completo',icons.spark,'peach')}${metric('Profissionais',String(members.filter(item=>item.role==='professional').length).padStart(2,'0'),'perfil individual',icons.people,'lavender')}${metric('Convites pendentes',String(pending.length).padStart(2,'0'),'válidos por 7 dias',icons.clock,'blue')}</div><div class="notice" style="margin-bottom:15px">${icons.check}<span>Novas contas só entram por convite. A empresa não é recriada e cada perfil recebe apenas as permissões autorizadas.</span></div><div class="card table-card"><table class="data-table"><thead><tr><th>Pessoa</th><th>Perfil e escopo</th><th>Situação</th><th>Criação / validade</th><th></th></tr></thead><tbody>${rows||'<tr><td colspan="5"><div class="empty-state"><strong>Nenhum usuário encontrado</strong>Crie o primeiro convite para sua equipe.</div></td></tr>'}</tbody></table><div class="table-footer"><span>${members.length} usuários · ${invitations.length} convites</span><span>Acesso protegido por perfil</span></div></div>`;
@@ -1053,6 +1088,14 @@
     const professionals=availableProfessionalOptions(member.professional_id||'');
     openModal(`${modalHeader('Editar acesso','Altere o perfil e o vínculo desta pessoa.')}<div class="modal-body"><form id="userAccessForm" data-id="${safe(member.record_id)}"><div class="detail-head"><div class="avatar">${safe(initials(member.display_name||member.email))}</div><div><strong>${safe(member.display_name||member.email)}</strong><small>${safe(member.email)}</small></div></div><div class="form-grid"><div class="form-field full"><label>Perfil de acesso</label><select name="role" required><option value="receptionist" ${member.role==='receptionist'?'selected':''}>Recepcionista · agenda e clientes</option><option value="professional" ${member.role==='professional'?'selected':''}>Profissional · agenda própria e comissões</option><option value="admin" ${member.role==='admin'?'selected':''}>Administrador · acesso completo</option></select></div><div class="form-field full" data-professional-field><label>Profissional da agenda</label><select name="professionalId"><option value="">Selecione o profissional</option>${professionals}</select></div></div><div class="notice" style="margin-top:13px">${icons.alert}<span>A alteração passa a valer no próximo carregamento da conta desta pessoa.</span></div><div class="modal-actions"><button type="button" class="btn" data-action="close-modal">Cancelar</button><button class="btn btn-primary" type="submit">${icons.check}Salvar acesso</button></div></form></div>`);
     toggleAccessProfessionalField(document.getElementById('userAccessForm'));
+  }
+  function changeOwnPasswordModal(){
+    const email=state.session?.user?.email||'';document.getElementById('roleMenu').hidden=true;
+    openModal(`${modalHeader('Alterar minha senha','Confirme a senha atual antes de escolher uma nova.')}<div class="modal-body"><form id="changeOwnPasswordForm"><div class="form-grid"><div class="form-field full"><label>E-mail da conta</label><input value="${safe(email)}" type="email" readonly></div><div class="form-field full"><label>Senha atual</label><input name="currentPassword" type="password" autocomplete="current-password" required></div><div class="form-field"><label>Nova senha</label><input name="newPassword" type="password" autocomplete="new-password" minlength="8" required></div><div class="form-field"><label>Confirmar nova senha</label><input name="confirmPassword" type="password" autocomplete="new-password" minlength="8" required></div></div><div class="notice" style="margin-top:13px">${icons.check}<span>A nova senha precisa ter pelo menos 8 caracteres e deve ser diferente da atual.</span></div><div class="modal-actions"><button type="button" class="btn" data-action="close-modal">Cancelar</button><button type="submit" class="btn btn-primary">Salvar nova senha</button></div></form></div>`);
+  }
+  function sendUserPasswordResetModal(id){
+    const member=state.businessUsers.find(item=>item.record_id===id);if(!member)return;
+    openModal(`${modalHeader('Enviar redefinição de senha','A pessoa criará a nova senha por um link pessoal e seguro.')}<div class="modal-body"><form id="adminPasswordResetForm" data-id="${safe(id)}"><div class="detail-head"><div class="avatar">${safe(initials(member.display_name||member.email))}</div><div><strong>${safe(member.display_name||member.email)}</strong><small>${safe(member.email)}</small></div></div><div class="notice">${icons.alert}<span>Enviar o link oficial de redefinição para <strong>${safe(member.email)}</strong>? A administradora não verá nem definirá a nova senha.</span></div><div class="modal-actions"><button type="button" class="btn" data-action="close-modal">Cancelar</button><button type="submit" class="btn btn-primary">Enviar link seguro</button></div></form></div>`);
   }
   function showInvitationLink(invitation){
     const link=`${window.location.origin}${window.location.pathname}?invite=${encodeURIComponent(invitation.invitation_token||invitation.invitationToken||'')}`;
@@ -1142,6 +1185,9 @@
     if(/invalid login credentials/i.test(message))return 'E-mail ou senha incorretos.';
     if(/email not confirmed/i.test(message))return 'Confirme seu e-mail antes de entrar.';
     if(/user already registered|already been registered/i.test(message))return 'Este e-mail já possui uma conta. Tente entrar.';
+    if(/weak password|password.{0,30}(least|characters|short)/i.test(message))return 'A senha não atende aos requisitos de segurança. Use pelo menos 8 caracteres.';
+    if(/same password|different from the old/i.test(message))return 'Escolha uma senha diferente da anterior.';
+    if(/rate limit|too many requests|email rate/i.test(message))return 'Muitas tentativas em pouco tempo. Aguarde alguns minutos e tente novamente.';
     if(/42501|row-level security|permission denied|sem permissão/i.test(message))return 'Sua conta não tem permissão para esta ação nesta unidade.';
     if(/23505|duplicate key|already exists/i.test(message))return 'Já existe um registro com esses dados.';
     if(/23P01|exclusion|conflit|overlap|horário bloqueado/i.test(message))return 'Este horário está ocupado ou bloqueado. Escolha outro.';
@@ -1228,6 +1274,9 @@
     const action=e.target.closest('[data-action]'); if(!action)return;
     const a=action.dataset.action;
     if(a==='auth-mode-login'){renderAuthGate(state.invitationDetails?'invite-login':'login');return;}
+    if(a==='auth-forgot-password'){renderAuthGate('forgot-password');return;}
+    if(a==='auth-cancel-password-reset'){clearPasswordRecoveryContext();if(supabaseClient)supabaseClient.auth.signOut();else renderAuthGate('login');return;}
+    if(a==='auth-change-password'){changeOwnPasswordModal();return;}
     if(a==='invite-use-login'){renderAuthGate('invite-login');return;}
     if(a==='invite-use-signup'){renderAuthGate('invite');return;}
     if(a==='auth-retry'){bootApplication();return;}
@@ -1246,6 +1295,7 @@
     if(a==='refresh-users'){state.usersLoading=true;render();refreshUsersData();return;}
     if(a==='new-user-invite'){newUserInviteModal();return;}
     if(a==='edit-user-access'){editUserAccessModal(action.dataset.id);return;}
+    if(a==='send-user-password-reset'){sendUserPasswordResetModal(action.dataset.id);return;}
     if(a==='remove-user-access'){removeUserAccessModal(action.dataset.id);return;}
     if(a==='revoke-user-invite'){revokeUserInvitationModal(action.dataset.id);return;}
     if(a==='copy-user-invite'){
@@ -1305,6 +1355,30 @@
   });
   document.addEventListener('submit',async e=>{
     e.preventDefault();
+    if(e.target.id==='passwordRecoveryRequestForm'){
+      const form=e.target;const values=new FormData(form);const email=String(values.get('email')||'').trim().toLowerCase();setFormBusy(form,true);
+      try{const {error}=await supabaseClient.auth.resetPasswordForEmail(email,{redirectTo:passwordResetRedirect()});if(error){showFormError(form,friendlyError(error,'Não foi possível enviar o link agora.'));return;}renderAuthGate('recovery-sent');return;}
+      catch(error){if(document.body.contains(form))showFormError(form,friendlyError(error,'Não foi possível enviar o link agora.'));return;}
+      finally{if(document.body.contains(form))setFormBusy(form,false);}
+    }
+    if(e.target.id==='passwordResetForm'){
+      const form=e.target;const values=new FormData(form);const password=String(values.get('newPassword')||'');const confirmation=String(values.get('confirmPassword')||'');if(password.length<8){showFormError(form,'A nova senha precisa ter pelo menos 8 caracteres.');return;}if(password!==confirmation){showFormError(form,'As duas senhas precisam ser iguais.');return;}setFormBusy(form,true);
+      try{const {error}=await supabaseClient.auth.updateUser({password});if(error){showFormError(form,friendlyError(error,'Não foi possível atualizar a senha.'));return;}const sessionResult=await supabaseClient.auth.getSession();clearPasswordRecoveryContext();if(sessionResult.data.session){await loadAuthenticatedWorkspace(sessionResult.data.session);toast('Senha atualizada com sucesso.');}else renderAuthGate('login','Senha atualizada. Entre novamente com a nova senha.');return;}
+      catch(error){if(document.body.contains(form))showFormError(form,friendlyError(error,'Não foi possível atualizar a senha.'));return;}
+      finally{if(document.body.contains(form))setFormBusy(form,false);}
+    }
+    if(e.target.id==='changeOwnPasswordForm'){
+      const form=e.target;const values=new FormData(form);const currentPassword=String(values.get('currentPassword')||'');const password=String(values.get('newPassword')||'');const confirmation=String(values.get('confirmPassword')||'');const email=String(state.session?.user?.email||'');if(!email){showFormError(form,'Não foi possível identificar o e-mail desta sessão.');return;}if(password.length<8){showFormError(form,'A nova senha precisa ter pelo menos 8 caracteres.');return;}if(password!==confirmation){showFormError(form,'As duas senhas precisam ser iguais.');return;}if(password===currentPassword){showFormError(form,'Escolha uma senha diferente da atual.');return;}setFormBusy(form,true);
+      try{const verified=await supabaseClient.auth.signInWithPassword({email,password:currentPassword});if(verified.error){showFormError(form,'A senha atual está incorreta.');return;}if(verified.data.session)state.session=verified.data.session;const {error}=await supabaseClient.auth.updateUser({password});if(error){showFormError(form,friendlyError(error,'Não foi possível atualizar a senha.'));return;}const sessionResult=await supabaseClient.auth.getSession();if(sessionResult.data.session)state.session=sessionResult.data.session;closeModal();toast('Sua senha foi alterada com sucesso.');return;}
+      catch(error){if(document.body.contains(form))showFormError(form,friendlyError(error,'Não foi possível atualizar a senha.'));return;}
+      finally{if(document.body.contains(form))setFormBusy(form,false);}
+    }
+    if(e.target.id==='adminPasswordResetForm'){
+      const form=e.target;const member=state.businessUsers.find(item=>item.record_id===form.dataset.id);if(!member?.email){showFormError(form,'Usuário ou e-mail não encontrado.');return;}if(state.managementPreview){closeModal();toast('Prévia local: o link seguro seria enviado para o e-mail da pessoa.');return;}setFormBusy(form,true);
+      try{const {error}=await supabaseClient.auth.resetPasswordForEmail(member.email,{redirectTo:passwordResetRedirect()});if(error){showFormError(form,friendlyError(error,'Não foi possível enviar o link agora.'));return;}closeModal();toast(`Link de redefinição enviado para ${member.email}.`);return;}
+      catch(error){if(document.body.contains(form))showFormError(form,friendlyError(error,'Não foi possível enviar o link agora.'));return;}
+      finally{if(document.body.contains(form))setFormBusy(form,false);}
+    }
     if(e.target.id==='authForm'){
       const form=e.target;const values=new FormData(form);const email=String(values.get('email')||'').trim();const password=String(values.get('password')||'');setFormBusy(form,true);
       try{const {data,error}=await supabaseClient.auth.signInWithPassword({email,password});if(error){showFormError(form,friendlyError(error,'Não foi possível entrar.'));return;}if(state.pendingInvitationToken&&!(await acceptPendingInvitation(data.session)))return;await loadAuthenticatedWorkspace(data.session);return;}

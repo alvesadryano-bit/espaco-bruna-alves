@@ -41,6 +41,16 @@ A tela pública não oferece cadastro. A administradora informa nome e e-mail em
 
 O Supabase Auth precisa continuar aceitando criação de usuários por e-mail para que o link de convite possa concluir o cadastro. Isso não libera dados: sem aceitar um convite válido, a conta não recebe `business_membership` e permanece sem acesso. Configure `https://espacobrunaalves.vercel.app/**` em **Authentication → URL Configuration → Redirect URLs** para a confirmação de e-mail retornar ao convite.
 
+## Senhas e recuperação
+
+- Qualquer usuário conectado pode abrir **Alterar minha senha**, confirmar a senha atual e definir uma nova.
+- A tela de login oferece **Esqueci minha senha** sem revelar se o e-mail está cadastrado.
+- Em **Usuários**, a administradora pode enviar o link oficial de redefinição para uma pessoa ativa.
+- A administradora nunca vê nem escolhe a nova senha; a pessoa cria a senha no fluxo seguro do Supabase antes de continuar para a plataforma.
+- O navegador usa apenas `resetPasswordForEmail` e `updateUser` com a chave pública. Nenhuma API administrativa ou `service_role` é exposta.
+
+O redirecionamento usa `https://espacobrunaalves.vercel.app?password-reset=1`, coberto pela regra curinga recomendada acima.
+
 ## Migrations
 
 A migration base abaixo foi aplicada manualmente anteriormente e **não deve ser executada de novo**:
