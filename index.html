@@ -446,9 +446,9 @@
     </nav>
     <div class="nav-section">Gestão</div>
     <nav class="nav-list" aria-label="Gestão">
-      <button class="nav-link" data-page="estoque"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="m12 3 9 5-9 5-9-5 9-5Z"/><path d="m3 12 9 5 9-5M3 16l9 5 9-5M12 13v8"/></svg>Estoque <span class="nav-badge">2</span><span class="nav-status" style="display:none">Em configuração</span></button>
-      <button class="nav-link" data-page="financeiro" data-admin-only="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="m19 9-5 5-4-4-5 5"/><path d="M16 9h3v3"/></svg>Financeiro<span class="nav-status" style="display:none">Em configuração</span></button>
-      <button class="nav-link" data-page="comissoes"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M16 8h-5.5a2.5 2.5 0 0 0 0 5H13a2.5 2.5 0 0 1 0 5H8M12 6v2m0 10v2"/></svg>Comissões<span class="nav-status" style="display:none">Em configuração</span></button>
+      <button class="nav-link" data-page="estoque"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="m12 3 9 5-9 5-9-5 9-5Z"/><path d="m3 12 9 5 9-5M3 16l9 5 9-5M12 13v8"/></svg>Estoque <span class="nav-badge">2</span><span class="nav-status" style="display:none">Ativo</span></button>
+      <button class="nav-link" data-page="financeiro" data-admin-only="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="m19 9-5 5-4-4-5 5"/><path d="M16 9h3v3"/></svg>Financeiro<span class="nav-status" style="display:none">Ativo</span></button>
+      <button class="nav-link" data-page="comissoes"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M16 8h-5.5a2.5 2.5 0 0 0 0 5H13a2.5 2.5 0 0 1 0 5H8M12 6v2m0 10v2"/></svg>Comissões<span class="nav-status" style="display:none">Ativo</span></button>
     </nav>
     <div class="sidebar-spacer"></div>
     <div class="sidebar-help"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><path d="M9.5 9a2.5 2.5 0 1 1 4.5 1.5c-1.2 1-2 1.5-2 3M12 17h.01"/></svg><div><strong>Precisa de ajuda?</strong><small>Fale com nosso suporte</small></div></div>
@@ -472,9 +472,9 @@
   import { createClient } from '@supabase/supabase-js';
 
   const supabaseUrl = import.meta.env?.VITE_SUPABASE_URL;
-  const supabaseAnonKey = import.meta.env?.VITE_SUPABASE_ANON_KEY;
-  const supabaseClient = supabaseUrl && supabaseAnonKey
-    ? createClient(supabaseUrl, supabaseAnonKey, { auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true } })
+  const supabasePublicKey = import.meta.env?.VITE_SUPABASE_PUBLISHABLE_KEY || import.meta.env?.VITE_SUPABASE_ANON_KEY;
+  const supabaseClient = supabaseUrl && supabasePublicKey
+    ? createClient(supabaseUrl, supabasePublicKey, { auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true } })
     : null;
   const icons = {
     calendar:'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M16 3v4M8 3v4M3 10h18"/></svg>',
@@ -529,7 +529,10 @@
       {name:'Máscara reconstrutora 250 g',sku:'HOM-208',type:'Revenda',stock:8,unit:'un',minimum:4,cost:41,price:89.9,initials:'MR'},
       {name:'Pó descolorante azul',sku:'COL-031',type:'Uso interno',stock:7,unit:'un',minimum:3,cost:56,initials:'PA'},
       {name:'Óleo finalizador 60 ml',sku:'HOM-052',type:'Revenda',stock:2,unit:'un',minimum:4,cost:28,price:59.9,initials:'OF'}
-    ]
+    ],
+    managementLoaded:false, managementLoading:false, managementError:'', managementPreview:false,
+    inventoryProducts:[], stockMovements:[], checkouts:[], checkoutPayments:[], expenses:[],
+    commissionEntries:[], commissionPayouts:[], commissionRules:[]
   };
   const demoServiceOptions=[
     {name:'Corte feminino',duration:45,price:145},
@@ -581,14 +584,15 @@
   }
   async function bootApplication(){
     if(!supabaseClient){
-      if(import.meta.env.DEV&&new URLSearchParams(window.location.search).get('demo')==='1'){state.supabaseMode=false;document.body.classList.remove('auth-required');document.getElementById('authRoot').hidden=true;render();return;}
-      state.supabaseMode=true;renderAuthGate('issue','Supabase não configurado. Defina VITE_SUPABASE_URL e VITE_SUPABASE_ANON_KEY para habilitar os dados reais.');return;
+      const previewParams=new URLSearchParams(window.location.search);const demoPreview=previewParams.get('demo')==='1'||import.meta.env.VITE_DEMO_PREVIEW==='1';const managementPreview=previewParams.get('management')==='1'||import.meta.env.VITE_MANAGEMENT_PREVIEW==='1';
+      if(import.meta.env.DEV&&demoPreview){state.supabaseMode=false;if(managementPreview){seedManagementPreview();state.page='estoque';}document.body.classList.remove('auth-required');document.getElementById('authRoot').hidden=true;render();return;}
+      state.supabaseMode=true;renderAuthGate('issue','Supabase não configurado. Defina VITE_SUPABASE_URL e VITE_SUPABASE_PUBLISHABLE_KEY para habilitar os dados reais.');return;
     }
     state.supabaseMode=true;renderAuthGate('loading');
     const {data,error}=await supabaseClient.auth.getSession();
     if(error){renderAuthGate('login','Falha ao iniciar sessão: '+error.message);return;}
     if(data.session)await loadAuthenticatedWorkspace(data.session);else renderAuthGate('login');
-    supabaseClient.auth.onAuthStateChange((event)=>{if(event==='SIGNED_OUT'){state.authenticated=false;state.session=null;state.businessId=null;state.branchId=null;state.clients=[];state.appointments=[];state.waitlist=[];renderAuthGate('login');}});
+    supabaseClient.auth.onAuthStateChange((event)=>{if(event==='SIGNED_OUT'){state.authenticated=false;state.session=null;state.businessId=null;state.branchId=null;state.clients=[];state.appointments=[];state.waitlist=[];state.managementLoaded=false;state.inventoryProducts=[];state.stockMovements=[];state.checkouts=[];state.checkoutPayments=[];state.expenses=[];state.commissionEntries=[];state.commissionPayouts=[];state.commissionRules=[];renderAuthGate('login');}});
   }
   async function loadAuthenticatedWorkspace(session){
     state.session=session;
@@ -607,6 +611,7 @@
     state.role=membership.role==='admin'?'Administrador':membership.role==='receptionist'?'Recepcionista':'Profissional';state.authenticated=true;
     state.date=new Date();state.appointments=[];state.waitlist=[];state.clients=[];state.products=[];
     try{await loadSupabaseAgenda();}catch(error){state.authenticated=false;renderAuthGate('issue',error.message||'Falha ao carregar os dados.');return;}
+    await loadManagementData();
     document.body.classList.remove('auth-required');document.getElementById('authRoot').hidden=true;render();
   }
   async function createFirstBusiness(form){
@@ -666,6 +671,83 @@
       state.waitlist=(waitResult.data||[]).map((item,index)=>{const client=clientByBackend.get(item.client_id);const service=serviceByBackend.get(item.service_id);const pro=proByBackend.get(item.preferred_professional_id);if(!client||!service)return null;const pref={any:'Qualquer horário',morning:'Manhã',afternoon:'Tarde',evening:'Noite'}[item.time_preference]||'Qualquer horário';return{id:2000+index,backendId:item.id,clientId:client.id,clientBackendId:client.backendId,serviceId:service.id,serviceBackendId:service.backendId,service:service.name,preference:pref,preferredProfessional:pro?.name||'',preferredProfessionalId:pro?.id||null,preferredProfessionalBackendId:pro?.backendId||null,notes:item.notes||''};}).filter(Boolean);
     }
   }
+  const paymentMethodLabels={pix:'PIX',credit_card:'Cartão de crédito',debit_card:'Cartão de débito',cash:'Dinheiro',bank_transfer:'Transferência',other:'Outro'};
+  const movementTypeLabels={purchase:'Entrada de compra',consumption:'Consumo interno',sale:'Venda',loss:'Perda / descarte',return:'Devolução',adjustment:'Ajuste'};
+  const dateTimeFmt=iso=>iso?new Intl.DateTimeFormat('pt-BR',{timeZone:state.timeZone,day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'}).format(new Date(iso)):'—';
+  const monthKeyInZone=(date=new Date())=>dateKeyInZone(date,state.timeZone).slice(0,7);
+  const isoMonthInZone=iso=>iso?monthKeyInZone(new Date(iso)):'';
+  function seedManagementPreview(){
+    const now=new Date();const daysAgo=days=>new Date(now.getTime()-days*86400000).toISOString();
+    state.managementPreview=true;state.managementLoaded=true;state.managementError='';state.currentName='Bruna Alves';state.currentProfessionalId='professional-1';state.role='Administrador';state.branchName='Unidade principal';
+    state.clients=state.clients.map((client,index)=>({...client,backendId:`client-${index+1}`}));
+    state.services=demoServiceOptions.slice(0,6).map((service,index)=>({id:index+1,backendId:`service-${index+1}`,...service}));
+    state.professionals=['Marina Costa','Paula Mendes','Júlia Freitas'].map((name,index)=>({id:index+1,backendId:`professional-${index+1}`,name}));
+    state.inventoryProducts=state.products.map((product,index)=>({backendId:`product-${index+1}`,...product,productType:product.type==='Revenda'?'retail':'internal',averageCost:product.cost,price:product.price||null,updatedAt:daysAgo(index),initials:product.initials}));
+    state.stockMovements=[
+      {id:'movement-1',product_id:'product-1',movement_type:'purchase',quantity_delta:4,balance_after:2.4,unit_cost:38.5,reason:'Compra · Distribuidora Bela',created_at:daysAgo(1)},
+      {id:'movement-2',product_id:'product-2',movement_type:'consumption',quantity_delta:-0.3,balance_after:1.2,unit_cost:null,reason:'Consumo em atendimentos',created_at:daysAgo(1)},
+      {id:'movement-3',product_id:'product-3',movement_type:'sale',quantity_delta:-1,balance_after:3,unit_cost:null,reason:'Venda em comanda',created_at:daysAgo(2)}
+    ];
+    state.checkouts=[
+      {id:'checkout-1',client_id:'client-1',status:'paid',subtotal:180,discount:0,total:180,closed_at:daysAgo(0)},
+      {id:'checkout-2',client_id:'client-2',status:'paid',subtotal:390,discount:20,total:370,closed_at:daysAgo(1)},
+      {id:'checkout-3',client_id:'client-3',status:'paid',subtotal:145,discount:0,total:145,closed_at:daysAgo(3)}
+    ];
+    state.checkoutPayments=[
+      {id:'payment-1',checkout_id:'checkout-1',payment_method:'pix',amount:180,created_at:daysAgo(0)},
+      {id:'payment-2',checkout_id:'checkout-2',payment_method:'credit_card',amount:370,created_at:daysAgo(1)},
+      {id:'payment-3',checkout_id:'checkout-3',payment_method:'cash',amount:145,created_at:daysAgo(3)}
+    ];
+    state.expenses=[
+      {id:'expense-1',description:'Compra de materiais',category:'Produtos e insumos',amount:286.5,status:'paid',paid_at:daysAgo(1),payment_method:'pix'},
+      {id:'expense-2',description:'Internet da unidade',category:'Água, luz e internet',amount:129.9,status:'paid',paid_at:daysAgo(4),payment_method:'credit_card'}
+    ];
+    state.commissionRules=[
+      {id:'rule-1',service_id:'service-1',professional_id:null,rule_type:'percent',value:45,valid_from:daysAgo(30)},
+      {id:'rule-2',service_id:'service-2',professional_id:'professional-2',rule_type:'percent',value:40,valid_from:daysAgo(30)},
+      {id:'rule-3',service_id:'service-4',professional_id:null,rule_type:'fixed',value:55,valid_from:daysAgo(30)}
+    ];
+    state.commissionEntries=[
+      {id:'entry-1',professional_id:'professional-1',service_id:'service-1',rule_type:'percent',base_amount:180,rule_value:45,amount:81,status:'pending',generated_at:daysAgo(0)},
+      {id:'entry-2',professional_id:'professional-2',service_id:'service-2',rule_type:'percent',base_amount:370,rule_value:40,amount:148,status:'pending',generated_at:daysAgo(1)},
+      {id:'entry-3',professional_id:'professional-3',service_id:'service-4',rule_type:'fixed',base_amount:145,rule_value:55,amount:55,status:'paid',generated_at:daysAgo(3),paid_at:daysAgo(1)}
+    ];
+    state.commissionPayouts=[{id:'payout-1',professional_id:'professional-3',amount:55,payment_method:'pix',paid_at:daysAgo(1)}];
+  }
+  async function loadManagementData(){
+    if(!state.supabaseMode||!state.authenticated)return;
+    state.managementLoading=true;state.managementError='';
+    try{
+      if(state.role==='Administrador'){
+        const [productResult,stockResult,movementResult,checkoutResult,paymentResult,expenseResult,entryResult,payoutResult,ruleResult]=await Promise.all([
+          supabaseClient.from('products').select('id,name,sku,product_type,unit,minimum_stock,cost_price,sale_price,active,created_at').eq('business_id',state.businessId).eq('active',true).order('name').limit(1000),
+          supabaseClient.from('branch_product_stock').select('product_id,quantity,average_cost,updated_at').eq('business_id',state.businessId).eq('branch_id',state.branchId).limit(1000),
+          supabaseClient.from('stock_movements').select('id,product_id,movement_type,quantity_delta,balance_after,unit_cost,reason,created_at').eq('business_id',state.businessId).eq('branch_id',state.branchId).order('created_at',{ascending:false}).limit(250),
+          supabaseClient.from('checkouts').select('id,appointment_id,client_id,status,subtotal,discount,total,notes,closed_at,created_at').eq('business_id',state.businessId).eq('branch_id',state.branchId).order('closed_at',{ascending:false}).limit(500),
+          supabaseClient.from('checkout_payments').select('id,checkout_id,payment_method,amount,created_at').eq('business_id',state.businessId).eq('branch_id',state.branchId).order('created_at',{ascending:false}).limit(1000),
+          supabaseClient.from('expenses').select('id,description,category,amount,status,paid_at,payment_method,notes,created_at').eq('business_id',state.businessId).eq('branch_id',state.branchId).order('created_at',{ascending:false}).limit(500),
+          supabaseClient.from('commission_entries').select('id,professional_id,service_id,rule_type,base_amount,rule_value,amount,status,payout_id,generated_at,paid_at').eq('business_id',state.businessId).eq('branch_id',state.branchId).order('generated_at',{ascending:false}).limit(1000),
+          supabaseClient.from('commission_payouts').select('id,professional_id,amount,payment_method,notes,paid_at').eq('business_id',state.businessId).eq('branch_id',state.branchId).order('paid_at',{ascending:false}).limit(500),
+          supabaseClient.from('service_commission_rules').select('id,service_id,professional_id,rule_type,value,valid_from,valid_to').eq('business_id',state.businessId).is('valid_to',null).order('valid_from',{ascending:false}).limit(1000)
+        ]);
+        for(const result of [productResult,stockResult,movementResult,checkoutResult,paymentResult,expenseResult,entryResult,payoutResult,ruleResult])if(result.error)throw new Error(result.error.message);
+        const stockByProduct=new Map((stockResult.data||[]).map(item=>[item.product_id,item]));
+        state.inventoryProducts=(productResult.data||[]).map(item=>{const stock=stockByProduct.get(item.id);return{backendId:item.id,name:item.name,sku:item.sku,type:item.product_type==='retail'?'Revenda':'Uso interno',productType:item.product_type,unit:item.unit,minimum:Number(item.minimum_stock),cost:Number(item.cost_price),price:item.sale_price==null?null:Number(item.sale_price),stock:Number(stock?.quantity||0),averageCost:Number(stock?.average_cost||item.cost_price||0),updatedAt:stock?.updated_at||item.created_at,initials:initials(item.name)};});
+        state.stockMovements=movementResult.data||[];state.checkouts=checkoutResult.data||[];state.checkoutPayments=paymentResult.data||[];state.expenses=expenseResult.data||[];state.commissionEntries=entryResult.data||[];state.commissionPayouts=payoutResult.data||[];state.commissionRules=ruleResult.data||[];
+      }else if(state.role==='Profissional'){
+        const [entryResult,payoutResult]=await Promise.all([
+          supabaseClient.from('commission_entries').select('id,professional_id,service_id,rule_type,base_amount,rule_value,amount,status,payout_id,generated_at,paid_at').eq('business_id',state.businessId).eq('branch_id',state.branchId).eq('professional_id',state.currentProfessionalId).order('generated_at',{ascending:false}).limit(1000),
+          supabaseClient.from('commission_payouts').select('id,professional_id,amount,payment_method,notes,paid_at').eq('business_id',state.businessId).eq('branch_id',state.branchId).eq('professional_id',state.currentProfessionalId).order('paid_at',{ascending:false}).limit(500)
+        ]);
+        for(const result of [entryResult,payoutResult])if(result.error)throw new Error(result.error.message);
+        state.commissionEntries=entryResult.data||[];state.commissionPayouts=payoutResult.data||[];
+      }
+      state.managementLoaded=true;
+    }catch(error){
+      state.managementLoaded=false;state.managementError=friendlyError(error,'Não foi possível carregar os módulos de gestão.');
+    }finally{state.managementLoading=false;}
+  }
+  async function refreshManagementData(){await loadManagementData();render();}
   async function refreshAgenda(){
     if(state.supabaseMode&&state.authenticated){try{await loadSupabaseAgenda();}catch(error){toast('Falha ao atualizar agenda: '+error.message);return;}}
     render();
@@ -684,15 +766,15 @@
     toast(`Visualização de ${role.toLowerCase()} ativada.`);
   }
   function render(){
-    const live=state.supabaseMode&&state.authenticated;
+    const live=state.supabaseMode&&state.authenticated;const managementLive=live||state.managementPreview;
     if(live&&state.role==='Profissional'&&state.calendarView==='kanban')state.calendarView='day';
     document.querySelectorAll('.nav-link').forEach(btn=>{
       const pg=btn.dataset.page;btn.classList.toggle('active',pg===state.page);
       const recepHidden=state.role==='Recepcionista'&&['estoque','financeiro','comissoes'].includes(pg);
       const profHidden=state.role==='Profissional'&&['estoque','financeiro'].includes(pg);
       btn.style.display=(recepHidden||profHidden)?'none':'flex';
-      const status=btn.querySelector('.nav-status');if(status)status.style.display=live?'inline-flex':'none';
-      const moduleBadge=btn.querySelector('.nav-badge');if(moduleBadge&&pg!=='agenda')moduleBadge.style.display=live?'none':'grid';
+      const status=btn.querySelector('.nav-status');if(status){status.style.display=managementLive?'inline-flex':'none';status.textContent=state.managementError?'Configurar':'Ativo';}
+      const moduleBadge=btn.querySelector('.nav-badge');if(moduleBadge&&pg!=='agenda')moduleBadge.style.display=managementLive?'none':'grid';
     });
     const agendaBadge=document.querySelector('[data-page="agenda"] .nav-badge');
     if(agendaBadge){
@@ -718,7 +800,7 @@
     document.getElementById('breadcrumbPage').textContent=pageNames[state.page]||'AGENDA';
     const pages={agenda:renderAgenda,clientes:renderClients,servicos:renderServices,estoque:renderInventory,financeiro:renderFinance,comissoes:renderCommissions};
     const managementPages=['estoque','financeiro','comissoes'];
-    document.getElementById('pageContent').innerHTML=live&&managementPages.includes(state.page)?renderLiveManagementPage(state.page):(pages[state.page]||renderAgenda)();
+    document.getElementById('pageContent').innerHTML=managementLive&&managementPages.includes(state.page)?renderLiveManagementPage(state.page):(pages[state.page]||renderAgenda)();
     document.getElementById('mobileOverlay').classList.remove('visible');document.getElementById('sidebar').classList.remove('open');
   }
   function metric(label,value,foot,icon,style=''){
@@ -776,7 +858,7 @@
       <div class="metric-grid">${metrics}</div>
       <div class="dashboard-grid"><section class="card"><div class="calendar-toolbar"><div class="calendar-nav"><button class="btn btn-icon" data-action="date-prev" aria-label="Dia anterior"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="m15 18-6-6 6-6"/></svg></button><button class="btn btn-sm" data-action="date-today">Hoje</button><button class="btn btn-icon" data-action="date-next" aria-label="Próximo dia"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="m9 18 6-6-6-6"/></svg></button><span class="date-main">${dateFmt(state.date,{day:'numeric',month:'long',year:'numeric'})}</span></div><div style="display:flex;align-items:center;gap:8px"><div class="view-switch"><button class="${state.calendarView==='day'?'active':''}" data-action="view-day">Dia</button>${live?'':`<button class="${state.calendarView==='week'?'active':''}" data-action="view-week">Semana</button>`}${own?'':`<button class="${state.calendarView==='kanban'?'active':''}" data-action="view-kanban">Kanban</button>`}</div>${own?'':`<select class="filter-select" id="staffFilter"><option value="all">Todos profissionais</option>${staffOptions}</select>`}</div></div><div class="calendar-legend"><span class="legend-item"><i class="legend-dot scheduled"></i>Agendado</span><span class="legend-item"><i class="legend-dot"></i>Confirmado</span><span class="legend-item"><i class="legend-dot in-service"></i>Em atendimento</span><span class="legend-item"><i class="legend-dot done"></i>Finalizado</span></div>${state.calendarView==='week'?renderWeekCalendar(list):state.calendarView==='kanban'?renderKanban(list):`<div class="agenda-list" id="agendaList">${apptRows||'<div class="empty-state"><strong>Nenhum atendimento</strong>Não há agendamentos para este dia.</div>'}</div>`}</section>
       <aside class="side-stack"><div class="card next-card"><div class="card-title">Próximo atendimento</div><div class="card-subtitle">${next?'Preparar espaço e ficha da cliente':'Agenda livre por enquanto'}</div>${next?`<div class="next-time"><strong>${next.time}</strong><span>• ${next.end}</span></div><div class="next-client"><div class="client-avatar">${safe(next.initials)}</div><div class="appt-main"><div class="appt-client">${safe(next.client)}</div><div class="appt-service">${safe(next.service)}</div></div></div><div class="next-footer"><span>${safe(next.professional)}</span><button data-action="appointment" data-id="${next.id}">Ver atendimento ${icons.arrow}</button></div>`:'<div class="next-time"><strong>—</strong></div>'}</div>
-      <div class="card"><div class="card-header"><div><div class="card-title">Equipe de hoje</div><div class="card-subtitle">Ocupação por profissional</div></div><button class="text-button" data-action="team-info">Ver equipe ${icons.arrow}</button></div><div class="team-list">${professionals.map((p,i)=>`<div class="team-row"><div class="avatar" style="background:${p[3]};color:${p[4]}">${p[2]}</div><div class="team-info"><strong>${p[0]}</strong><small>${p[1]}</small></div><span class="team-count">${live?state.appointments.filter(a=>a.professional===p[0]).length:(i===1?'92%':i===0?'78%':'64%')}</span></div>`).join('')}</div></div>
+      <div class="card"><div class="card-header"><div><div class="card-title">Equipe de hoje</div><div class="card-subtitle">Ocupação por profissional</div></div><button class="text-button" data-action="team-info">Ver equipe ${icons.arrow}</button></div><div class="team-list">${professionals.map((p,i)=>`<div class="team-row"><div class="avatar" style="background:${p[3]};color:${p[4]}">${safe(p[2])}</div><div class="team-info"><strong>${safe(p[0])}</strong><small>${safe(p[1])}</small></div><span class="team-count">${live?state.appointments.filter(a=>a.professional===p[0]).length:(i===1?'92%':i===0?'78%':'64%')}</span></div>`).join('')}</div></div>
       ${live?'':`<div class="card"><div class="card-header"><div><div class="card-title">Aniversários próximos</div><div class="card-subtitle">Uma boa hora para surpreender</div></div><span class="tag gold">02</span></div><div class="birthday-list"><div class="birthday-item"><div class="birthday-date">14<br>OUT</div><div class="birthday-info"><strong>Mariana Lopes</strong><small>Daqui a 2 dias</small></div><button class="table-action" data-action="birthday" aria-label="Criar mensagem">${icons.spark}</button></div><div class="birthday-item"><div class="birthday-date">18<br>OUT</div><div class="birthday-info"><strong>Helena Prado</strong><small>Daqui a 6 dias</small></div><button class="table-action" data-action="birthday" aria-label="Criar mensagem">${icons.spark}</button></div></div></div>`}</aside></div>`;
   }
   function renderClients(){
@@ -807,11 +889,58 @@
   function renderLiveManagementPage(page){
     const modules={
       estoque:{title:'Estoque',description:'Produtos de uso interno, revenda e movimentações da unidade.',icon:icons.box},
-      financeiro:{title:'Financeiro',description:'Entradas, despesas, caixa e margem dos serviços.',icon:icons.wallet},
-      comissoes:{title:'Comissões',description:'Valores gerados, pendentes e pagos à equipe.',icon:icons.spark}
+      financeiro:{title:'Financeiro',description:'Entradas, despesas e saldo realizado da unidade.',icon:icons.wallet},
+      comissoes:{title:'Comissões',description:'Regras, valores gerados e repasses da equipe.',icon:icons.spark}
     };
     const module=modules[page]||modules.estoque;
-    return `<div class="page-heading"><div><div class="eyebrow"><span class="eyebrow-dot"></span>Área de gestão</div><h1>${module.title}</h1><p class="page-subtitle">${module.description}</p></div><div class="heading-actions"><span class="tag gold">Em configuração</span></div></div><div class="card" style="max-width:920px;padding:26px 28px"><div style="display:flex;align-items:center;gap:14px"><span class="metric-icon" style="width:42px;height:42px">${module.icon}</span><div><div class="card-title">A área de ${module.title.toLowerCase()} está disponível</div><div class="card-subtitle">Estamos conectando este módulo aos dados reais do Espaço Bruna Alves.</div></div></div><div style="margin-top:19px;padding:14px 16px;border:1px solid #e8eee8;border-radius:11px;background:#f7faf7;color:#718078;font-size:10px;line-height:1.6"><strong style="color:#53665a">Sem números de demonstração.</strong> Os indicadores e registros aparecerão aqui quando a integração com o Supabase estiver pronta.</div></div>`;
+    if(state.managementLoading)return `<div class="page-heading"><div><div class="eyebrow"><span class="eyebrow-dot"></span>Área de gestão</div><h1>${module.title}</h1><p class="page-subtitle">${module.description}</p></div></div><div class="card"><div class="empty-state"><strong>Carregando dados</strong>Sincronizando este módulo com o Supabase…</div></div>`;
+    if(state.managementError){
+      const migrationMissing=/does not exist|schema cache|relation .* not found/i.test(state.managementError);
+      const detail=migrationMissing?'A migration 20261012020000_management_modules.sql precisa ser aplicada no Supabase antes de usar esta área.':state.managementError;
+      return `<div class="page-heading"><div><div class="eyebrow"><span class="eyebrow-dot"></span>Área de gestão</div><h1>${module.title}</h1><p class="page-subtitle">${module.description}</p></div><button class="btn" data-action="refresh-management">Atualizar</button></div><div class="card" style="max-width:920px;padding:26px 28px"><div class="notice">${icons.alert}<span><strong>Módulo indisponível.</strong> ${safe(detail)}</span></div></div>`;
+    }
+    if(page==='estoque')return renderLiveInventory();
+    if(page==='financeiro')return renderLiveFinance();
+    return renderLiveCommissions();
+  }
+  function renderLiveInventory(){
+    const selectedType=state.inventoryTab==='Revenda'?'Revenda':'Uso interno';
+    const list=state.inventoryProducts.filter(product=>product.type===selectedType);
+    const low=state.inventoryProducts.filter(product=>product.stock<=product.minimum).length;
+    const totalCost=state.inventoryProducts.reduce((sum,product)=>sum+(product.stock*product.averageCost),0);
+    const retailValue=state.inventoryProducts.filter(product=>product.type==='Revenda').reduce((sum,product)=>sum+(product.stock*(product.price||0)),0);
+    const rows=list.map(product=>{const pct=product.minimum>0?Math.min(100,Math.round((product.stock/(product.minimum*2))*100)):100;const qty=product.stock.toLocaleString('pt-BR',{maximumFractionDigits:3});const min=product.minimum.toLocaleString('pt-BR',{maximumFractionDigits:3});return `<tr><td><div class="table-person"><div class="avatar">${safe(product.initials)}</div><div><strong>${safe(product.name)}</strong><small>SKU ${safe(product.sku)}</small></div></div></td><td><span class="tag ${product.type==='Revenda'?'blue':'gold'}">${safe(product.type)}</span></td><td><div class="stock-level"><strong style="color:#4c5c52;font-size:10px">${qty} ${safe(product.unit)}</strong><div class="stock-track"><span class="${product.stock<=product.minimum?'low':''}" style="width:${pct}%"></span></div></div></td><td>${min} ${safe(product.unit)}</td><td>${money(product.averageCost)}</td><td>${product.stock<=product.minimum?'<span class="status-pill service">Estoque baixo</span>':'<span class="status-pill">Disponível</span>'}</td><td><button class="table-action" data-action="stock-movement-product" data-id="${safe(product.backendId)}" aria-label="Movimentar estoque">${icons.arrow}</button></td></tr>`;}).join('');
+    const productById=new Map(state.inventoryProducts.map(product=>[product.backendId,product]));
+    const movementRows=state.stockMovements.slice(0,10).map(item=>{const product=productById.get(item.product_id);const positive=Number(item.quantity_delta)>0;return `<tr><td>${dateTimeFmt(item.created_at)}</td><td><strong style="color:#45564c">${safe(product?.name||'Produto')}</strong><small style="display:block;color:#9aa49e;margin-top:3px">${safe(item.reason||movementTypeLabels[item.movement_type]||'Movimentação')}</small></td><td>${safe(movementTypeLabels[item.movement_type]||item.movement_type)}</td><td class="${positive?'positive':'negative'}" style="font-weight:750">${positive?'+':''}${Number(item.quantity_delta).toLocaleString('pt-BR',{maximumFractionDigits:3})}</td><td>${Number(item.balance_after).toLocaleString('pt-BR',{maximumFractionDigits:3})}</td></tr>`;}).join('');
+    return `<div class="page-heading"><div><div class="eyebrow"><span class="eyebrow-dot"></span>Operação</div><h1>Estoque</h1><p class="page-subtitle">Saldos e movimentações reais de ${safe(state.branchName)}.</p></div><div class="heading-actions"><button class="btn" data-action="stock-movement">${icons.arrow}Movimentar</button><button class="btn btn-primary" data-action="new-product">${icons.plus}Novo produto</button></div></div><div class="metric-grid">${metric('Produtos ativos',String(state.inventoryProducts.length).padStart(2,'0'),'catálogo da empresa',icons.box)}${metric('Valor em estoque',money(totalCost),'a custo médio',icons.wallet,'peach')}${metric('Revenda potencial',money(retailValue),'pelo preço cadastrado',icons.spark,'lavender')}${metric('Abaixo do mínimo',String(low).padStart(2,'0'),low?'itens precisam de atenção':'estoque saudável',icons.alert,'blue')}</div>${low?`<div class="notice" style="margin-bottom:15px">${icons.alert}<span><strong>${low} ${low===1?'item precisa':'itens precisam'} de reposição.</strong> Registre uma entrada para atualizar o saldo.</span></div>`:''}<div class="page-toolbar"><div class="filter-tabs"><button class="${selectedType==='Uso interno'?'active':''}" data-action="inventory-tab" data-tab="Uso interno">Uso interno</button><button class="${selectedType==='Revenda'?'active':''}" data-action="inventory-tab" data-tab="Revenda">Revenda</button></div><button class="btn btn-sm" data-action="refresh-management">Atualizar dados</button></div><div class="card table-card"><table class="data-table"><thead><tr><th>Produto</th><th>Categoria</th><th>Saldo atual</th><th>Estoque mínimo</th><th>Custo médio</th><th>Situação</th><th></th></tr></thead><tbody>${rows||'<tr><td colspan="7"><div class="empty-state"><strong>Nenhum produto nesta categoria</strong>Cadastre o primeiro produto para começar.</div></td></tr>'}</tbody></table><div class="table-footer"><span>${list.length} itens nesta categoria</span><span>Saldo por unidade</span></div></div><div class="card table-card" style="margin-top:16px"><div class="card-header" style="padding:17px 18px"><div><div class="card-title">Movimentações recentes</div><div class="card-subtitle">Entradas, consumo, perdas e ajustes</div></div></div><table class="data-table"><thead><tr><th>Data</th><th>Produto</th><th>Tipo</th><th>Quantidade</th><th>Saldo</th></tr></thead><tbody>${movementRows||'<tr><td colspan="5"><div class="empty-state">Nenhuma movimentação registrada.</div></td></tr>'}</tbody></table></div>`;
+  }
+  function renderLiveFinance(){
+    const month=monthKeyInZone();
+    const monthCheckouts=state.checkouts.filter(item=>item.status==='paid'&&isoMonthInZone(item.closed_at)===month);
+    const monthExpenses=state.expenses.filter(item=>item.status==='paid'&&isoMonthInZone(item.paid_at)===month);
+    const received=monthCheckouts.reduce((sum,item)=>sum+Number(item.total||0),0);
+    const spent=monthExpenses.reduce((sum,item)=>sum+Number(item.amount||0),0);
+    const discounts=monthCheckouts.reduce((sum,item)=>sum+Number(item.discount||0),0);
+    const clientById=new Map(state.clients.map(client=>[client.backendId,client]));
+    const paymentsByCheckout=new Map();state.checkoutPayments.forEach(payment=>{const list=paymentsByCheckout.get(payment.checkout_id)||[];list.push(payment);paymentsByCheckout.set(payment.checkout_id,list);});
+    const transactions=[
+      ...state.checkouts.filter(item=>item.status==='paid').map(item=>({date:item.closed_at,type:'Entrada',description:`Comanda · ${clientById.get(item.client_id)?.name||'Cliente'}`,detail:(paymentsByCheckout.get(item.id)||[]).map(payment=>paymentMethodLabels[payment.payment_method]||payment.payment_method).join(' + ')||'Pagamento',amount:Number(item.total||0),positive:true})),
+      ...state.expenses.filter(item=>item.status==='paid').map(item=>({date:item.paid_at||item.created_at,type:'Saída',description:item.description,detail:`${item.category} · ${paymentMethodLabels[item.payment_method]||item.payment_method||'—'}`,amount:Number(item.amount||0),positive:false}))
+    ].sort((a,b)=>new Date(b.date)-new Date(a.date)).slice(0,30);
+    const rows=transactions.map(item=>`<tr><td>${dateTimeFmt(item.date)}</td><td><span class="tag ${item.positive?'':'gold'}">${item.type}</span></td><td><strong style="color:#45564c">${safe(item.description)}</strong><small style="display:block;color:#9aa49e;margin-top:3px">${safe(item.detail)}</small></td><td class="${item.positive?'positive':'negative'}" style="font-weight:750">${item.positive?'+':'−'} ${money(item.amount)}</td></tr>`).join('');
+    return `<div class="page-heading"><div><div class="eyebrow"><span class="eyebrow-dot"></span>Gestão financeira</div><h1>Financeiro</h1><p class="page-subtitle">Valores realizados em ${safe(state.branchName)}.</p></div><div class="heading-actions"><button class="btn" data-action="refresh-management">Atualizar</button><button class="btn btn-primary" data-action="new-expense">${icons.plus}Registrar despesa</button></div></div><div class="metric-grid">${metric('Entradas no mês',money(received),`${monthCheckouts.length} comandas pagas`,icons.wallet)}${metric('Saídas no mês',money(spent),`${monthExpenses.length} despesas pagas`,icons.box,'peach')}${metric('Descontos concedidos',money(discounts),'nas comandas do mês',icons.spark,'lavender')}${metric('Saldo realizado',money(received-spent),'entradas menos saídas',icons.check,'blue')}</div><div class="notice" style="margin-bottom:15px">${icons.wallet}<span>As entradas são criadas ao fechar uma comanda na Agenda. Despesas são registradas nesta tela.</span></div><div class="card table-card"><div class="card-header" style="padding:17px 18px"><div><div class="card-title">Movimentação financeira</div><div class="card-subtitle">Últimas entradas e saídas confirmadas</div></div></div><table class="data-table"><thead><tr><th>Data</th><th>Tipo</th><th>Descrição</th><th>Valor</th></tr></thead><tbody>${rows||'<tr><td colspan="4"><div class="empty-state"><strong>Nenhum lançamento</strong>Feche uma comanda ou registre uma despesa.</div></td></tr>'}</tbody></table><div class="table-footer"><span>${transactions.length} lançamentos exibidos</span><span>Regime de caixa · valores pagos</span></div></div>`;
+  }
+  function renderLiveCommissions(){
+    const professionalView=state.role==='Profissional';
+    const entries=professionalView?state.commissionEntries.filter(item=>item.professional_id===state.currentProfessionalId):state.commissionEntries;
+    const pending=entries.filter(item=>item.status==='pending').reduce((sum,item)=>sum+Number(item.amount||0),0);
+    const month=monthKeyInZone();
+    const paidMonth=entries.filter(item=>item.status==='paid'&&isoMonthInZone(item.paid_at)===month).reduce((sum,item)=>sum+Number(item.amount||0),0);
+    const generatedMonth=entries.filter(item=>isoMonthInZone(item.generated_at)===month).reduce((sum,item)=>sum+Number(item.amount||0),0);
+    const proById=new Map(state.professionals.map(item=>[item.backendId,item]));const serviceById=new Map(state.services.map(item=>[item.backendId,item]));
+    const rows=entries.map(item=>{const pro=proById.get(item.professional_id);const service=serviceById.get(item.service_id);const rule=item.rule_type==='percent'?`${Number(item.rule_value).toLocaleString('pt-BR',{maximumFractionDigits:2})}%`:money(item.rule_value);return `<tr><td>${dateTimeFmt(item.generated_at)}</td><td><strong style="color:#45564c">${safe(service?.name||'Serviço')}</strong><small style="display:block;color:#9aa49e;margin-top:3px">Base ${money(item.base_amount)} · ${rule}</small></td>${professionalView?'':`<td>${safe(pro?.name||'Profissional')}</td>`}<td class="commission-amount">${money(item.amount)}</td><td>${item.status==='paid'?'<span class="tag">Pago</span>':'<span class="tag gold">Pendente</span>'}</td></tr>`;}).join('');
+    const ruleRows=state.commissionRules.map(rule=>{const service=serviceById.get(rule.service_id);const pro=proById.get(rule.professional_id);const value=rule.rule_type==='percent'?`${Number(rule.value).toLocaleString('pt-BR',{maximumFractionDigits:2})}%`:money(rule.value);return `<tr><td><strong style="color:#45564c">${safe(service?.name||'Serviço')}</strong></td><td>${safe(pro?.name||'Regra geral')}</td><td>${value}</td><td>${dateTimeFmt(rule.valid_from)}</td></tr>`;}).join('');
+    return `<div class="page-heading"><div><div class="eyebrow"><span class="eyebrow-dot"></span>${professionalView?'Seu painel':'Repasses da equipe'}</div><h1>${professionalView?'Minhas comissões':'Comissões'}</h1><p class="page-subtitle">Valores calculados no fechamento das comandas.</p></div><div class="heading-actions"><button class="btn" data-action="refresh-management">Atualizar</button>${professionalView?'':`<button class="btn" data-action="new-commission-rule">Configurar regra</button><button class="btn btn-primary" data-action="new-payout">${icons.wallet}Registrar repasse</button>`}</div></div><div class="metric-grid">${metric('Pendente de repasse',money(pending),`${entries.filter(item=>item.status==='pending').length} lançamentos`,icons.wallet)}${metric('Pago neste mês',money(paidMonth),'repasses confirmados',icons.check,'peach')}${metric('Gerado neste mês',money(generatedMonth),'comandas finalizadas',icons.spark,'lavender')}${metric(professionalView?'Serviços com comissão':'Regras ativas',String(professionalView?new Set(entries.map(item=>item.service_id)).size:state.commissionRules.length).padStart(2,'0'),'configuração atual',icons.people,'blue')}</div>${!professionalView&&!state.commissionRules.length?`<div class="notice" style="margin-bottom:15px">${icons.alert}<span><strong>Nenhuma regra ativa.</strong> Configure a comissão por serviço antes de fechar as próximas comandas.</span></div>`:''}<div class="card table-card"><div class="card-header" style="padding:17px 18px"><div><div class="card-title">Lançamentos de comissão</div><div class="card-subtitle">Histórico calculado por serviço realizado</div></div></div><table class="data-table"><thead><tr><th>Data</th><th>Serviço e regra</th>${professionalView?'':'<th>Profissional</th>'}<th>Comissão</th><th>Situação</th></tr></thead><tbody>${rows||`<tr><td colspan="${professionalView?4:5}"><div class="empty-state"><strong>Nenhuma comissão gerada</strong>Os lançamentos aparecem depois do fechamento das comandas.</div></td></tr>`}</tbody></table><div class="table-footer"><span>${entries.length} lançamentos</span><span>Base líquida após desconto proporcional</span></div></div>${professionalView?'':`<div class="card table-card" style="margin-top:16px"><div class="card-header" style="padding:17px 18px"><div><div class="card-title">Regras ativas</div><div class="card-subtitle">A regra específica do profissional prevalece sobre a regra geral</div></div></div><table class="data-table"><thead><tr><th>Serviço</th><th>Aplicação</th><th>Valor</th><th>Vigência</th></tr></thead><tbody>${ruleRows||'<tr><td colspan="4"><div class="empty-state">Nenhuma regra configurada.</div></td></tr>'}</tbody></table></div>`}`;
   }
   function renderInventory(){
     const internal=state.products.filter(p=>p.type===state.inventoryTab);
@@ -854,7 +983,8 @@
     const visitText=live?'Dados do atendimento':`${c?c.visits:4} visitas`;
     const allergyText=live?(c?.notes||'Nenhuma observação registrada'):c?.allergy||'Nenhuma informada';
     const formulaText=live?'Ainda sem registro':c?.formula||'—';
-    const actions=live?'<div class="notice" style="margin-top:14px">Reagende arrastando este cartão para outro horário no Kanban. Caixa e edição detalhada serão conectadas na próxima etapa.</div>':`<div class="modal-actions"><button class="btn" data-action="edit-appointment">Editar horário</button>${a.status==='Finalizado'?'<button class="btn btn-soft" data-action="toast-report">Atendimento finalizado</button>':'<button class="btn btn-primary" data-action="open-checkout" data-id="'+a.id+'">'+icons.wallet+'Fechar comanda</button>'}</div>`;
+    const closed=['Finalizado','Faltou','Cancelado'].includes(a.status);
+    const actions=live?(state.role==='Profissional'?'<div class="notice" style="margin-top:14px">Alterações de agenda e fechamento são feitos pela recepção ou administração.</div>':closed?'<div class="notice" style="margin-top:14px">Este atendimento está encerrado.</div>':`<div class="modal-actions"><button class="btn" data-action="close-modal">Voltar</button><button class="btn btn-primary" data-action="open-checkout" data-id="${a.id}">${icons.wallet}Fechar comanda</button></div>`):`<div class="modal-actions"><button class="btn" data-action="edit-appointment">Editar horário</button>${a.status==='Finalizado'?'<button class="btn btn-soft" data-action="toast-report">Atendimento finalizado</button>':'<button class="btn btn-primary" data-action="open-checkout" data-id="'+a.id+'">'+icons.wallet+'Fechar comanda</button>'}</div>`;
     openModal(`${modalHeader('Detalhes do atendimento','Agenda · '+dateFmt(state.date,{day:'numeric',month:'long'}))}<div class="modal-body"><div class="detail-head"><div class="avatar tone-${a.tone}">${safe(a.initials)}</div><div><strong>${safe(a.client)}</strong><small>${c?safe(c.phone):'Cliente cadastrada'} · ${visitText}</small></div><span class="status-pill ${a.status==='Em atendimento'?'service':a.status==='Finalizado'?'done':'scheduled'}" style="margin-left:auto">${safe(a.status)}</span></div><div class="detail-section"><h3>Resumo</h3><div class="detail-line"><span>Serviço</span><strong>${safe(a.service)}</strong></div><div class="detail-line"><span>Horário</span><strong>${a.time} – ${a.end}</strong></div><div class="detail-line"><span>Profissional</span><strong>${safe(a.professional)}</strong></div><div class="detail-line"><span>Valor previsto</span><strong>${money(a.amount)}</strong></div></div><div class="detail-section"><h3>Ficha da cliente</h3><div class="detail-line"><span>Alergias / observações</span><strong>${safe(allergyText)}</strong></div><div class="detail-line"><span>Última fórmula</span><strong>${safe(formulaText)}</strong></div></div>${actions}</div>`,true);
   }
   function newAppointmentModal(){
@@ -869,16 +999,47 @@
   function newClientModal(){
     openModal(`${modalHeader('Nova cliente','Adicione os dados principais; a ficha pode ser completada depois.') }<div class="modal-body"><form id="clientForm"><div class="form-grid"><div class="form-field full"><label>Nome completo</label><input name="name" placeholder="Ex.: Laura Mendes" required></div><div class="form-field"><label>Celular</label><input name="phone" placeholder="(11) 99999-9999" required></div><div class="form-field"><label>E-mail</label><input name="email" type="email" placeholder="cliente@email.com"></div><div class="form-field"><label>Aniversário</label><input name="birthday" type="date"></div><div class="form-field"><label>Como prefere contato?</label><select><option>WhatsApp</option><option>Ligação</option><option>E-mail</option><option>Não informar</option></select></div><div class="form-field full"><label>Observação inicial</label><textarea name="notes" placeholder="Alergias, preferências ou outras informações importantes"></textarea></div></div><p style="color:#9aa49e;font-size:8px;line-height:1.5">Os dados da cliente devem ser usados apenas para finalidades relacionadas ao atendimento e conforme consentimentos aplicáveis.</p><div class="modal-actions"><button type="button" class="btn" data-action="close-modal">Cancelar</button><button class="btn btn-primary" type="submit">${icons.check}Salvar cliente</button></div></form></div>`);
   }
+  function newProductModal(){
+    openModal(`${modalHeader('Novo produto','Cadastre o item e o saldo inicial desta unidade.')}<div class="modal-body"><form id="productForm"><div class="form-grid"><div class="form-field full"><label>Nome do produto</label><input name="name" required maxlength="140" placeholder="Ex.: Shampoo nutritivo 300 ml"></div><div class="form-field"><label>SKU</label><input name="sku" required maxlength="60" placeholder="Ex.: HOM-113"></div><div class="form-field"><label>Categoria</label><select name="productType"><option value="internal">Uso interno</option><option value="retail">Revenda</option></select></div><div class="form-field"><label>Unidade</label><input name="unit" required maxlength="20" value="un" placeholder="un, ml, g, L"></div><div class="form-field"><label>Estoque mínimo</label><input name="minimumStock" type="number" min="0" step="0.001" value="0" required></div><div class="form-field"><label>Custo unitário (R$)</label><input name="costPrice" type="number" min="0" step="0.01" value="0" required></div><div class="form-field"><label>Preço de venda (R$)</label><input name="salePrice" type="number" min="0" step="0.01" placeholder="Somente para revenda"></div><div class="form-field"><label>Saldo inicial</label><input name="initialQuantity" type="number" min="0" step="0.001" value="0" required></div></div><div class="modal-actions"><button type="button" class="btn" data-action="close-modal">Cancelar</button><button class="btn btn-primary" type="submit">${icons.check}Cadastrar produto</button></div></form></div>`,true);
+  }
+  function stockMovementModal(productId=''){
+    if(!state.inventoryProducts.length){toast('Cadastre um produto antes de movimentar o estoque.');return;}
+    const options=state.inventoryProducts.map(product=>`<option value="${safe(product.backendId)}" ${product.backendId===productId?'selected':''}>${safe(product.name)} · ${product.stock.toLocaleString('pt-BR',{maximumFractionDigits:3})} ${safe(product.unit)}</option>`).join('');
+    openModal(`${modalHeader('Movimentar estoque','A operação atualiza o saldo e fica registrada no histórico.')}<div class="modal-body"><form id="stockMovementForm"><div class="form-grid"><div class="form-field full"><label>Produto</label><select name="productId" required>${options}</select></div><div class="form-field"><label>Tipo</label><select name="movementType"><option value="purchase">Entrada de compra</option><option value="return">Devolução ao estoque</option><option value="consumption">Consumo interno</option><option value="loss">Perda / descarte</option><option value="adjustment_in">Ajuste de entrada</option><option value="adjustment_out">Ajuste de saída</option></select></div><div class="form-field"><label>Quantidade</label><input name="quantity" type="number" min="0.001" step="0.001" required></div><div class="form-field"><label>Custo unitário (R$)</label><input name="unitCost" type="number" min="0" step="0.01" placeholder="Opcional nas entradas"></div><div class="form-field full"><label>Referência / motivo</label><input name="reason" maxlength="240" placeholder="Fornecedor, consumo, ajuste ou observação"></div></div><div class="modal-actions"><button type="button" class="btn" data-action="close-modal">Cancelar</button><button class="btn btn-primary" type="submit">${icons.check}Registrar movimentação</button></div></form></div>`,true);
+  }
+  function expenseModal(){
+    openModal(`${modalHeader('Registrar despesa','Inclua uma saída paga para manter o saldo realizado correto.')}<div class="modal-body"><form id="expenseForm"><div class="form-grid"><div class="form-field full"><label>Descrição</label><input name="description" required maxlength="180" placeholder="Ex.: Compra de materiais"></div><div class="form-field"><label>Categoria</label><select name="category"><option>Produtos e insumos</option><option>Aluguel</option><option>Água, luz e internet</option><option>Marketing</option><option>Manutenção</option><option>Impostos e taxas</option><option>Outros</option></select></div><div class="form-field"><label>Valor (R$)</label><input name="amount" type="number" min="0.01" step="0.01" required></div><div class="form-field"><label>Forma de pagamento</label><select name="paymentMethod"><option value="pix">PIX</option><option value="credit_card">Cartão de crédito</option><option value="debit_card">Cartão de débito</option><option value="cash">Dinheiro</option><option value="bank_transfer">Transferência</option><option value="other">Outro</option></select></div><div class="form-field"><label>Data do pagamento</label><input name="paidAt" type="datetime-local" value="${dateKeyInZone(new Date(),state.timeZone)+'T'+timeInZone(new Date().toISOString(),state.timeZone)}" required></div><div class="form-field full"><label>Observação</label><input name="notes" maxlength="300" placeholder="Opcional"></div></div><div class="modal-actions"><button type="button" class="btn" data-action="close-modal">Cancelar</button><button class="btn btn-primary" type="submit">${icons.check}Registrar despesa</button></div></form></div>`,true);
+  }
+  function commissionRuleModal(){
+    if(!state.services.length){toast('Cadastre um serviço antes de configurar comissões.');return;}
+    const services=state.services.map(service=>`<option value="${safe(service.backendId)}">${safe(service.name)}</option>`).join('');
+    const professionals=state.professionals.map(pro=>`<option value="${safe(pro.backendId)}">${safe(pro.name)}</option>`).join('');
+    openModal(`${modalHeader('Configurar comissão','A regra específica do profissional prevalece sobre a regra geral do serviço.')}<div class="modal-body"><form id="commissionRuleForm"><div class="form-grid"><div class="form-field full"><label>Serviço</label><select name="serviceId" required>${services}</select></div><div class="form-field full"><label>Aplicação</label><select name="professionalId"><option value="">Regra geral · todos os profissionais</option>${professionals}</select></div><div class="form-field"><label>Tipo de regra</label><select name="ruleType"><option value="percent">Percentual</option><option value="fixed">Valor fixo</option></select></div><div class="form-field"><label>Valor</label><input name="value" type="number" min="0" step="0.01" required placeholder="Ex.: 40"></div></div><div class="notice" style="margin-top:13px">${icons.spark}<span>A alteração vale para as próximas comandas. Lançamentos já gerados não são recalculados.</span></div><div class="modal-actions"><button type="button" class="btn" data-action="close-modal">Cancelar</button><button class="btn btn-primary" type="submit">${icons.check}Salvar regra</button></div></form></div>`,true);
+  }
+  function commissionPayoutModal(){
+    const pending=state.commissionEntries.filter(item=>item.status==='pending');
+    const grouped=new Map();pending.forEach(item=>{const group=grouped.get(item.professional_id)||{ids:[],amount:0};group.ids.push(item.id);group.amount+=Number(item.amount||0);grouped.set(item.professional_id,group);});
+    const options=[...grouped.entries()].map(([id,group])=>{const pro=state.professionals.find(item=>item.backendId===id);return `<option value="${safe(id)}">${safe(pro?.name||'Profissional')} · ${money(group.amount)} (${group.ids.length})</option>`;}).join('');
+    if(!options){toast('Não há comissões pendentes para repasse.');return;}
+    openModal(`${modalHeader('Registrar repasse','O repasse quitará todos os lançamentos pendentes do profissional selecionado.')}<div class="modal-body"><form id="commissionPayoutForm"><div class="form-grid"><div class="form-field full"><label>Profissional e total pendente</label><select name="professionalId" required>${options}</select></div><div class="form-field"><label>Forma de pagamento</label><select name="paymentMethod"><option value="pix">PIX</option><option value="bank_transfer">Transferência</option><option value="cash">Dinheiro</option><option value="other">Outro</option></select></div><div class="form-field full"><label>Observação</label><input name="notes" maxlength="300" placeholder="Ex.: Repasse da primeira quinzena"></div></div><div class="modal-actions"><button type="button" class="btn" data-action="close-modal">Cancelar</button><button class="btn btn-primary" type="submit">${icons.check}Confirmar repasse</button></div></form></div>`,true);
+  }
   function openCheckout(id=null){
     const a=id?state.appointments.find(x=>x.id===Number(id)):null;
     state.selectedAppointment=a?a.id:null;
-    const client=a?a.client:'Cliente da comanda';
-    const service=a?a.service:'Serviço realizado';
-    const total=a?a.amount:180;
-    openModal(`${modalHeader('Fechar comanda','Confira os itens e registre uma ou mais formas de pagamento.') }<div class="modal-body"><form id="checkoutForm" data-total="${total}"><div class="detail-head" style="margin-bottom:13px"><div class="avatar">${initials(client)}</div><div><strong>${safe(client)}</strong><small>${a?'Atendimento de hoje · '+safe(a.professional):'Comanda avulsa'}</small></div></div><div class="checkout-lines"><div class="checkout-item"><div><strong>${safe(service)}</strong><small>Serviço · comissão calculada conforme regra vigente</small></div><input id="checkoutItemAmount" type="number" min="0" step="0.01" value="${Number(total).toFixed(2)}" aria-label="Valor do serviço"></div><div class="checkout-item"><div><strong>Insumos registrados</strong><small>Produtos de uso interno vinculados ao atendimento</small></div><span class="tag">R$ 25,00 custo</span></div></div><div class="checkout-total"><span>Total da comanda</span><strong id="checkoutTotal">${money(total)}</strong></div><div style="display:flex;align-items:center;justify-content:space-between;margin:3px 0 9px"><div class="card-title" style="font-size:10px">Formas de pagamento</div><button type="button" class="text-button" data-action="add-payment">${icons.plus}Adicionar forma</button></div><div class="payments-list" id="paymentsList">${paymentRow('PIX',total)}</div><div class="payment-summary"><span>Valor recebido</span><strong id="paymentSum">${money(total)}</strong></div><div class="validation-message" id="paymentError">A soma dos pagamentos precisa ser igual ao total da comanda.</div><div class="notice" style="margin-top:13px">${icons.spark}<span>O sistema registra as taxas, o consumo de insumos e a comissão de forma separada para calcular a margem do serviço.</span></div><div class="modal-actions"><button type="button" class="btn" data-action="close-modal">Cancelar</button><button class="btn btn-primary" type="submit">${icons.check}Confirmar fechamento</button></div></form></div>`,true);
+    const live=state.supabaseMode&&state.authenticated;
+    if(live){
+      if(!a?.backendId){toast('Atendimento não encontrado.');return;}
+      const lines=state.appointments.filter(item=>item.backendId===a.backendId);
+      const subtotal=lines.reduce((sum,item)=>sum+Number(item.amount||0),0);
+      const items=lines.map(item=>`<div class="checkout-item"><div><strong>${safe(item.service)}</strong><small>${safe(item.professional)} · ${item.time}–${item.end}</small></div><strong>${money(item.amount)}</strong></div>`).join('');
+      openModal(`${modalHeader('Fechar comanda','Confira os serviços e registre o pagamento recebido.')}<div class="modal-body"><form id="checkoutForm" data-live="true" data-appointment-id="${safe(a.backendId)}" data-subtotal="${subtotal}" data-total="${subtotal}"><div class="detail-head" style="margin-bottom:13px"><div class="avatar">${safe(a.initials)}</div><div><strong>${safe(a.client)}</strong><small>${lines.length} ${lines.length===1?'serviço':'serviços'} · ${safe(state.branchName)}</small></div></div><div class="checkout-lines">${items}</div><div class="form-grid" style="margin-top:13px"><div class="form-field"><label>Desconto (R$)</label><input id="checkoutDiscount" name="discount" type="number" min="0" max="${Math.max(0,subtotal-.01).toFixed(2)}" step="0.01" value="0"></div><div class="form-field"><label>Observação</label><input name="notes" maxlength="300" placeholder="Opcional"></div></div><div class="checkout-total"><span>Total da comanda</span><strong id="checkoutTotal">${money(subtotal)}</strong></div><div style="display:flex;align-items:center;justify-content:space-between;margin:3px 0 9px"><div class="card-title" style="font-size:10px">Formas de pagamento</div><button type="button" class="text-button" data-action="add-payment">${icons.plus}Adicionar forma</button></div><div class="payments-list" id="paymentsList">${paymentRow('pix',subtotal)}</div><div class="payment-summary"><span>Valor recebido</span><strong id="paymentSum">${money(subtotal)}</strong></div><div class="validation-message" id="paymentError">A soma dos pagamentos precisa ser igual ao total da comanda.</div><div class="notice" style="margin-top:13px">${icons.spark}<span>As comissões são calculadas pelas regras vigentes e o lançamento financeiro é criado nesta confirmação.</span></div><div class="modal-actions"><button type="button" class="btn" data-action="close-modal">Cancelar</button><button class="btn btn-primary" type="submit">${icons.check}Confirmar fechamento</button></div></form></div>`,true);return;
+    }
+    const client=a?a.client:'Cliente da comanda';const service=a?a.service:'Serviço realizado';const total=a?a.amount:180;
+    openModal(`${modalHeader('Fechar comanda','Confira os itens e registre uma ou mais formas de pagamento.')}<div class="modal-body"><form id="checkoutForm" data-total="${total}"><div class="detail-head" style="margin-bottom:13px"><div class="avatar">${initials(client)}</div><div><strong>${safe(client)}</strong><small>${a?'Atendimento de hoje · '+safe(a.professional):'Comanda avulsa'}</small></div></div><div class="checkout-lines"><div class="checkout-item"><div><strong>${safe(service)}</strong><small>Serviço · comissão calculada conforme regra vigente</small></div><input id="checkoutItemAmount" type="number" min="0" step="0.01" value="${Number(total).toFixed(2)}" aria-label="Valor do serviço"></div></div><div class="checkout-total"><span>Total da comanda</span><strong id="checkoutTotal">${money(total)}</strong></div><div style="display:flex;align-items:center;justify-content:space-between;margin:3px 0 9px"><div class="card-title" style="font-size:10px">Formas de pagamento</div><button type="button" class="text-button" data-action="add-payment">${icons.plus}Adicionar forma</button></div><div class="payments-list" id="paymentsList">${paymentRow('pix',total)}</div><div class="payment-summary"><span>Valor recebido</span><strong id="paymentSum">${money(total)}</strong></div><div class="validation-message" id="paymentError">A soma dos pagamentos precisa ser igual ao total da comanda.</div><div class="modal-actions"><button type="button" class="btn" data-action="close-modal">Cancelar</button><button class="btn btn-primary" type="submit">${icons.check}Confirmar fechamento</button></div></form></div>`,true);
   }
-  function paymentRow(method='PIX',amount=0){
-    return `<div class="payment-row"><div><label>Meio de pagamento</label><select class="payment-method"><option ${method==='PIX'?'selected':''}>PIX</option><option ${method==='Cartão de crédito'?'selected':''}>Cartão de crédito</option><option ${method==='Cartão de débito'?'selected':''}>Cartão de débito</option><option ${method==='Dinheiro'?'selected':''}>Dinheiro</option></select></div><div><label>Valor (R$)</label><input class="payment-amount" type="number" min="0" step="0.01" value="${Number(amount).toFixed(2)}"></div><button type="button" class="remove-payment" data-action="remove-payment" aria-label="Remover forma de pagamento">×</button></div>`;
+  function paymentRow(method='pix',amount=0){
+    const options=Object.entries(paymentMethodLabels).map(([value,label])=>`<option value="${value}" ${method===value?'selected':''}>${label}</option>`).join('');
+    return `<div class="payment-row"><div><label>Meio de pagamento</label><select class="payment-method">${options}</select></div><div><label>Valor (R$)</label><input class="payment-amount" type="number" min="0.01" step="0.01" value="${Number(amount).toFixed(2)}"></div><button type="button" class="remove-payment" data-action="remove-payment" aria-label="Remover forma de pagamento">×</button></div>`;
   }
   const timeToMinutes=time=>{const [hours,minutes]=String(time).split(':').map(Number);return hours*60+minutes;};
   const minutesToTime=minutes=>`${String(Math.floor(minutes/60)).padStart(2,'0')}:${String(minutes%60).padStart(2,'0')}`;
@@ -895,6 +1056,7 @@
     return message||fallback;
   }
   function showFormError(form,message){let node=form.querySelector('.form-error');if(!node){node=document.createElement('div');node.className='form-error';node.setAttribute('role','alert');node.style.cssText='grid-column:1/-1;margin:10px 0;padding:10px 12px;border:1px solid #efd3cf;border-radius:10px;background:#fff7f6;color:#9d514c;font-size:11px;line-height:1.45';form.prepend(node);}node.textContent=message;}
+  function setFormBusy(form,busy){const button=form.querySelector('button[type="submit"]');if(!button)return;if(busy){button.dataset.originalHtml=button.innerHTML;button.disabled=true;button.textContent='Salvando…';}else{button.disabled=false;if(button.dataset.originalHtml)button.innerHTML=button.dataset.originalHtml;}}
   function openKanbanScheduleModal(waitlistId,defaultTime){
     const live=state.supabaseMode&&state.authenticated;const request=state.waitlist.find(item=>item.id===Number(waitlistId));
     const client=request&&state.clients.find(item=>item.id===request.clientId);
@@ -982,10 +1144,15 @@
     if(a==='close-modal'){closeModal();return;}
     if(a==='new-appointment'){newAppointmentModal();return;}
     if(a==='new-client'){newClientModal();return;}
+    if(a==='new-product'){newProductModal();return;}
+    if(a==='stock-movement-product'){stockMovementModal(action.dataset.id);return;}
+    if(a==='new-expense'){expenseModal();return;}
+    if(a==='new-commission-rule'){commissionRuleModal();return;}
+    if(a==='refresh-management'){if(state.managementPreview){seedManagementPreview();render();toast('Dados da prévia restaurados.');return;}state.managementLoading=true;render();refreshManagementData();return;}
     if(a==='new-order'){openCheckout();return;}
     if(a==='appointment'){appointmentModal(action.dataset.id);return;}
-    if(a==='open-checkout'){if(state.supabaseMode&&state.authenticated){toast('O fluxo de caixa ainda não está ativado neste perfil.');return;}openCheckout(action.dataset.id);return;}
-    if(a==='add-payment'){const form=document.getElementById('checkoutForm');const total=Number(form?.dataset.total||0);const used=[...document.querySelectorAll('.payment-amount')].reduce((s,i)=>s+(Number(i.value)||0),0);const remaining=Math.max(0,total-used);document.getElementById('paymentsList').insertAdjacentHTML('beforeend',paymentRow('Cartão de crédito',remaining));updatePaymentSummary();return;}
+    if(a==='open-checkout'){openCheckout(action.dataset.id);return;}
+    if(a==='add-payment'){const form=document.getElementById('checkoutForm');const total=Number(form?.dataset.total||0);const used=[...document.querySelectorAll('.payment-amount')].reduce((s,i)=>s+(Number(i.value)||0),0);const remaining=Math.max(0,total-used);document.getElementById('paymentsList').insertAdjacentHTML('beforeend',paymentRow('credit_card',remaining));updatePaymentSummary();return;}
     if(a==='remove-payment'){if(document.querySelectorAll('.payment-row').length>1){action.closest('.payment-row').remove();updatePaymentSummary();}else toast('A comanda precisa ter ao menos uma forma de pagamento.');return;}
     if(a==='date-prev'){state.date.setDate(state.date.getDate()-(state.calendarView==='week'?7:1));state.supabaseMode?refreshAgenda():render();return;}
     if(a==='date-next'){state.date.setDate(state.date.getDate()+(state.calendarView==='week'?7:1));state.supabaseMode?refreshAgenda():render();return;}
@@ -998,7 +1165,8 @@
     if(a==='kanban-slot'){if(!state.kanbanSelected){toast('Arraste um cartão para este horário ou toque primeiro em uma cliente.');return;}handleKanbanDrop(state.kanbanSelected.type,state.kanbanSelected.id,action.dataset.time);return;}
     if(a==='client-detail'){clientDetail(action.dataset.id);return;}
     if(a==='inventory-tab'){state.inventoryTab=action.dataset.tab;render();return;}
-    if(a==='new-payout'){openModal(`${modalHeader('Registrar repasse','Selecione profissional e lançamentos que serão quitados.') }<div class="modal-body"><form id="payoutForm"><div class="form-grid"><div class="form-field full"><label>Profissional</label><select><option>Marina Costa · R$ 146,25 pendentes</option><option>Paula Mendes · R$ 244,00 pendentes</option><option>Júlia Freitas · R$ 72,50 pendentes</option></select></div><div class="form-field"><label>Valor do repasse</label><input type="number" value="146.25" step="0.01"></div><div class="form-field"><label>Forma de pagamento</label><select><option>Pix</option><option>Transferência</option><option>Dinheiro</option></select></div><div class="form-field full"><label>Observação</label><input placeholder="Ex.: Repasse da primeira quinzena"></div></div><div class="modal-actions"><button type="button" class="btn" data-action="close-modal">Cancelar</button><button type="submit" class="btn btn-primary">${icons.check}Confirmar repasse</button></div></form></div>`);return;}
+    if(a==='new-payout'){if((state.supabaseMode&&state.authenticated)||state.managementPreview){commissionPayoutModal();return;}openModal(`${modalHeader('Registrar repasse','Selecione profissional e lançamentos que serão quitados.') }<div class="modal-body"><form id="payoutForm"><div class="form-grid"><div class="form-field full"><label>Profissional</label><select><option>Marina Costa · R$ 146,25 pendentes</option><option>Paula Mendes · R$ 244,00 pendentes</option><option>Júlia Freitas · R$ 72,50 pendentes</option></select></div><div class="form-field"><label>Valor do repasse</label><input type="number" value="146.25" step="0.01"></div><div class="form-field"><label>Forma de pagamento</label><select><option>Pix</option><option>Transferência</option><option>Dinheiro</option></select></div><div class="form-field full"><label>Observação</label><input placeholder="Ex.: Repasse da primeira quinzena"></div></div><div class="modal-actions"><button type="button" class="btn" data-action="close-modal">Cancelar</button><button type="submit" class="btn btn-primary">${icons.check}Confirmar repasse</button></div></form></div>`);return;}
+    if(a==='stock-movement'&&((state.supabaseMode&&state.authenticated)||state.managementPreview)){stockMovementModal();return;}
     if(a==='stock-entry'||a==='stock-movement'){openModal(`${modalHeader(a==='stock-entry'?'Registrar entrada no estoque':'Nova movimentação','O movimento será registrado no histórico da unidade.') }<div class="modal-body"><form id="stockForm"><div class="form-grid"><div class="form-field full"><label>Produto</label><select>${state.products.map(p=>`<option>${safe(p.name)} · ${safe(p.type)}</option>`).join('')}</select></div><div class="form-field"><label>Tipo de movimento</label><select><option>${a==='stock-entry'?'Entrada de compra':'Ajuste de estoque'}</option><option>Perda / descarte</option><option>Devolução</option></select></div><div class="form-field"><label>Quantidade</label><input type="number" min="0.01" step="0.01" placeholder="Ex.: 5"></div><div class="form-field"><label>Custo unitário (R$)</label><input type="number" min="0" step="0.01" placeholder="0,00"></div><div class="form-field"><label>Referência / motivo</label><input placeholder="Fornecedor ou observação"></div></div><div class="modal-actions"><button type="button" class="btn" data-action="close-modal">Cancelar</button><button type="submit" class="btn btn-primary">${icons.check}Salvar movimentação</button></div></form></div>`);return;}
     if(a==='birthday'){toast('Mensagem de aniversário: integração WhatsApp será conectada na próxima etapa.');return;}
     if(a==='notifications'){toast('Tudo certo por aqui — você está em dia.');return;}
@@ -1015,6 +1183,7 @@
   document.addEventListener('input',e=>{
     if(e.target.id==='clientSearch'){const cursor=e.target.selectionStart;state.clientQuery=e.target.value;render();const next=document.getElementById('clientSearch');if(next){next.focus();next.setSelectionRange(cursor,cursor);}return;}
     if(e.target.id==='checkoutItemAmount'){const form=document.getElementById('checkoutForm');const value=Number(e.target.value)||0;form.dataset.total=String(value);document.getElementById('checkoutTotal').textContent=money(value);updatePaymentSummary();}
+    if(e.target.id==='checkoutDiscount'){const form=document.getElementById('checkoutForm');const subtotal=Number(form?.dataset.subtotal||0);const discount=Math.min(Math.max(0,subtotal-.01),Math.max(0,Number(e.target.value)||0));const total=Math.max(0,subtotal-discount);form.dataset.total=String(total);document.getElementById('checkoutTotal').textContent=money(total);const amounts=document.querySelectorAll('.payment-amount');if(amounts.length===1)amounts[0].value=total.toFixed(2);updatePaymentSummary();return;}
     if(e.target.classList.contains('payment-amount'))updatePaymentSummary();
   });
   document.addEventListener('change',e=>{if(e.target.id==='staffFilter'){const val=e.target.value;const live=state.supabaseMode&&state.authenticated;document.querySelectorAll('[data-action="appointment"]').forEach(row=>{const appt=state.appointments.find(a=>a.id===Number(row.dataset.id));const matchesAll=val==='all'||(!live&&val==='Todos profissionais');row.style.display=(!appt||matchesAll||(live?String(appt.professionalId)===val:appt.professional===val))?'':'none';});}});
@@ -1102,9 +1271,58 @@
       }
       state.clients.unshift({id:Date.now(),name,phone:rawPhone,email:String(data.get('email')||'—'),last:'Ainda sem atendimentos',lastDate:'—',next:'—',tag:'Nova cliente',initials:initials(name),tone:1,allergy:'Nenhuma informada',formula:'—',visits:0});closeModal();state.page='clientes';state.clientQuery='';render();toast(`${name} foi adicionada à sua base.`);return;
     }
+    if(state.managementPreview&&['productForm','stockMovementForm','expenseForm','commissionRuleForm','commissionPayoutForm'].includes(e.target.id)){closeModal();toast('Prévia local: o formulário foi validado, sem gravar no Supabase.');return;}
+    if(e.target.id==='productForm'){
+      const form=e.target;const data=new FormData(form);const salePrice=String(data.get('salePrice')||'').trim();setFormBusy(form,true);
+      try{
+        const {error}=await supabaseClient.rpc('create_inventory_product',{p_branch_id:state.branchId,p_name:String(data.get('name')||'').trim(),p_sku:String(data.get('sku')||'').trim(),p_product_type:String(data.get('productType')||'internal'),p_unit:String(data.get('unit')||'').trim(),p_minimum_stock:Number(data.get('minimumStock')||0),p_cost_price:Number(data.get('costPrice')||0),p_sale_price:salePrice===''?null:Number(salePrice),p_initial_quantity:Number(data.get('initialQuantity')||0)});
+        if(error){showFormError(form,friendlyError(error,'Não foi possível cadastrar o produto.'));return;}
+        closeModal();state.page='estoque';await refreshManagementData();toast('Produto cadastrado e saldo inicial registrado.');return;
+      }catch(error){showFormError(form,friendlyError(error,'Não foi possível cadastrar o produto.'));return;}finally{if(document.body.contains(form))setFormBusy(form,false);}
+    }
+    if(e.target.id==='stockMovementForm'){
+      const form=e.target;const data=new FormData(form);const rawType=String(data.get('movementType')||'');const quantity=Number(data.get('quantity')||0);const outgoing=['consumption','loss','adjustment_out'].includes(rawType);const movementType=rawType.startsWith('adjustment_')?'adjustment':rawType;const costRaw=String(data.get('unitCost')||'').trim();setFormBusy(form,true);
+      try{
+        const {error}=await supabaseClient.rpc('record_stock_movement',{p_branch_id:state.branchId,p_product_id:String(data.get('productId')||''),p_movement_type:movementType,p_quantity_delta:outgoing?-Math.abs(quantity):Math.abs(quantity),p_unit_cost:costRaw===''?null:Number(costRaw),p_reason:String(data.get('reason')||'').trim()||null});
+        if(error){showFormError(form,friendlyError(error,'Não foi possível registrar a movimentação.'));return;}
+        closeModal();state.page='estoque';await refreshManagementData();toast('Movimentação registrada e saldo atualizado.');return;
+      }catch(error){showFormError(form,friendlyError(error,'Não foi possível registrar a movimentação.'));return;}finally{if(document.body.contains(form))setFormBusy(form,false);}
+    }
+    if(e.target.id==='expenseForm'){
+      const form=e.target;const data=new FormData(form);const paidAt=String(data.get('paidAt')||'');setFormBusy(form,true);
+      try{
+        const {error}=await supabaseClient.rpc('record_expense',{p_branch_id:state.branchId,p_description:String(data.get('description')||'').trim(),p_category:String(data.get('category')||'').trim(),p_amount:Number(data.get('amount')||0),p_payment_method:String(data.get('paymentMethod')||''),p_paid_at:zonedDateTimeToIso(paidAt.slice(0,10),paidAt.slice(11,16)),p_notes:String(data.get('notes')||'').trim()||null});
+        if(error){showFormError(form,friendlyError(error,'Não foi possível registrar a despesa.'));return;}
+        closeModal();state.page='financeiro';await refreshManagementData();toast('Despesa registrada no financeiro.');return;
+      }catch(error){showFormError(form,friendlyError(error,'Confira a data e os valores informados.'));return;}finally{if(document.body.contains(form))setFormBusy(form,false);}
+    }
+    if(e.target.id==='commissionRuleForm'){
+      const form=e.target;const data=new FormData(form);setFormBusy(form,true);
+      try{
+        const {error}=await supabaseClient.rpc('upsert_commission_rule',{p_service_id:String(data.get('serviceId')||''),p_professional_id:String(data.get('professionalId')||'')||null,p_rule_type:String(data.get('ruleType')||'percent'),p_value:Number(data.get('value')||0)});
+        if(error){showFormError(form,friendlyError(error,'Não foi possível salvar a regra.'));return;}
+        closeModal();state.page='comissoes';await refreshManagementData();toast('Regra de comissão atualizada.');return;
+      }catch(error){showFormError(form,friendlyError(error,'Não foi possível salvar a regra.'));return;}finally{if(document.body.contains(form))setFormBusy(form,false);}
+    }
+    if(e.target.id==='commissionPayoutForm'){
+      const form=e.target;const data=new FormData(form);const professionalId=String(data.get('professionalId')||'');const entryIds=state.commissionEntries.filter(item=>item.status==='pending'&&item.professional_id===professionalId).map(item=>item.id);setFormBusy(form,true);
+      try{
+        const {error}=await supabaseClient.rpc('pay_commissions',{p_branch_id:state.branchId,p_professional_id:professionalId,p_entry_ids:entryIds,p_payment_method:String(data.get('paymentMethod')||'pix'),p_notes:String(data.get('notes')||'').trim()||null});
+        if(error){showFormError(form,friendlyError(error,'Não foi possível registrar o repasse.'));return;}
+        closeModal();state.page='comissoes';await refreshManagementData();toast('Repasse registrado e comissões quitadas.');return;
+      }catch(error){showFormError(form,friendlyError(error,'Não foi possível registrar o repasse.'));return;}finally{if(document.body.contains(form))setFormBusy(form,false);}
+    }
     if(e.target.id==='checkoutForm'){
-      if(state.supabaseMode&&state.authenticated){toast('O fluxo de caixa ainda não está ativado.');closeModal();return;}
-      const total=Number(e.target.dataset.total)||0;const amounts=[...document.querySelectorAll('.payment-amount')].map(i=>Number(i.value)||0);const sum=amounts.reduce((a,b)=>a+b,0);if(Math.abs(sum-total)>.009){document.getElementById('paymentError').classList.add('show');return;}const appt=state.appointments.find(x=>x.id===state.selectedAppointment);if(appt)appt.status='Finalizado';closeModal();render();toast(`Comanda de ${money(total)} fechada. Comissão, estoque e caixa atualizados.`);return;
+      const form=e.target;const total=Number(form.dataset.total)||0;const rows=[...form.querySelectorAll('.payment-row')];const payments=rows.map(row=>({method:row.querySelector('.payment-method').value,amount:Number(row.querySelector('.payment-amount').value)||0}));const sum=payments.reduce((value,item)=>value+item.amount,0);if(Math.abs(sum-total)>.009||payments.some(item=>item.amount<=0)){document.getElementById('paymentError').classList.add('show');return;}
+      if(form.dataset.live==='true'){
+        const data=new FormData(form);setFormBusy(form,true);
+        try{
+          const {error}=await supabaseClient.rpc('close_appointment_checkout',{p_appointment_id:form.dataset.appointmentId,p_discount:Number(data.get('discount')||0),p_payments:payments,p_notes:String(data.get('notes')||'').trim()||null});
+          if(error){showFormError(form,friendlyError(error,'Não foi possível fechar a comanda.'));return;}
+          closeModal();await Promise.all([loadSupabaseAgenda(),loadManagementData()]);render();toast(`Comanda de ${money(total)} fechada. Financeiro e comissões atualizados.`);return;
+        }catch(error){if(document.body.contains(form))showFormError(form,friendlyError(error,'Não foi possível fechar a comanda.'));else{render();toast('Comanda fechada; atualize a agenda para recarregar os dados.');}return;}finally{if(document.body.contains(form))setFormBusy(form,false);}
+      }
+      const appt=state.appointments.find(x=>x.id===state.selectedAppointment);if(appt)appt.status='Finalizado';closeModal();render();toast(`Comanda de ${money(total)} fechada. Comissão e caixa atualizados.`);return;
     }
     if(e.target.id==='payoutForm'){closeModal();toast('Repasse registrado no extrato do profissional.');return;}
     if(e.target.id==='stockForm'){closeModal();toast('Movimentação de estoque registrada.');return;}

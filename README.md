@@ -1,15 +1,59 @@
 # Espaço Bruna Alves
 
-Sistema de gestão para salão/estética. O layout aprovado permanece como base; o app está sendo conectado ao Supabase e preparado para GitHub/Vercel.
+Sistema de gestão para salão/estética em Vite + Supabase. O frontend usa Supabase Auth, RLS e RPCs transacionais para agenda, estoque, financeiro e comissões.
 
 ## Estado do projeto
 
-- A migration base `supabase/migrations/20261012000000_core_scheduling.sql` foi aplicada manualmente no Supabase e **não deve ser executada novamente**.
-- A migration complementar `20261012010000_frontdesk_client_visibility.sql` foi criada depois de corrigir a leitura de clientes da recepção e os privilégios das RPCs. **Ela ainda precisa ser aplicada uma única vez** no SQL Editor do Supabase antes de validar o fluxo da recepção.
-- Login/cadastro, confirmação de e-mail, criação da empresa/unidade, cadastro inicial de profissional/serviço, leitura do catálogo e da agenda, criação de cliente/agendamento/fila e reagendamento pelo Kanban estão ligados ao Supabase no frontend.
-- Estoque, caixa/checkout, financeiro, comissões, histórico técnico completo, gestão de usuários/equipe e edição de clientes/serviços ainda não foram conectados aos dados reais. Essas áreas demonstrativas ficam ocultas no modo autenticado; não publicar o protótipo demonstrativo como produção.
-- `npm run build` passou depois das alterações. **Ainda não houve teste end-to-end com uma sessão e dados reais do Supabase.**
-- `api/` é um scaffold NestJS/Prisma exploratório anterior e não integra o fluxo atual Vite/Supabase/Vercel.
+### Operacional no frontend
+
+- Login/cadastro e confirmação de e-mail.
+- Criação inicial da empresa, unidade, profissional e serviço.
+- Clientes, agenda diária, fila de encaixe e reagendamento por Kanban.
+- Estoque real: produtos, saldo por unidade, entradas, consumo, perdas, devoluções, ajustes, custo médio e histórico.
+- Financeiro real: fechamento de comandas, múltiplas formas de pagamento, descontos, despesas e saldo realizado.
+- Comissões reais: regras gerais ou por profissional, cálculo no fechamento da comanda e repasses.
+
+### Ainda fora deste escopo
+
+- Edição completa de clientes e serviços.
+- Visão semanal conectada ao Supabase.
+- Consumo automático de insumos por ficha técnica do serviço.
+- Venda avulsa de produtos sem um atendimento.
+- Estornos de comandas e conciliação bancária.
+
+## Segurança das chaves
+
+O navegador deve receber **somente** uma chave `sb_publishable_...` (ou `anon` legada). Chaves `sb_secret_...`, `service_role`, tokens pessoais do Supabase e tokens do GitHub nunca podem aparecer em variáveis `VITE_*`, arquivos `.env` versionados ou mensagens.
+
+O comando `npm run build` executa `scripts/validate-public-env.mjs` antes do Vite e bloqueia o build se detectar uma chave privilegiada.
+
+```bash
+VITE_SUPABASE_URL=https://SEU-PROJETO.supabase.co
+VITE_SUPABASE_PUBLISHABLE_KEY=sb_publishable_COLE_A_CHAVE_PUBLICA
+```
+
+Se uma `service_role` já foi publicada no bundle, substitua-a por uma chave publishable, faça novo deploy e desative/revogue a chave legada comprometida no Supabase. Trocar apenas a variável da Vercel não invalida o segredo que já ficou público.
+
+## Migrations
+
+A migration base abaixo foi aplicada manualmente anteriormente e **não deve ser executada de novo**:
+
+- `20261012000000_core_scheduling.sql`
+
+Aplique uma única vez, nesta ordem:
+
+1. `20261012010000_frontdesk_client_visibility.sql`
+2. `20261012020000_management_modules.sql`
+
+A migration dos módulos cria tabelas, RLS e RPCs para:
+
+- produtos, saldos e movimentações de estoque;
+- comandas, itens, pagamentos e despesas;
+- lançamentos e repasses de comissão;
+- fechamento atômico do atendimento, financeiro e comissão;
+- trilha no `audit_logs` para operações críticas.
+
+Como a migration base foi aplicada manualmente pelo SQL Editor, alinhe o histórico remoto/local antes de executar `supabase db push`. Não tente reaplicar a base.
 
 ## Rodar localmente
 
@@ -17,36 +61,36 @@ Requer Node.js 20.19+.
 
 ```bash
 npm ci
+cp .env.example .env.local
 npm run dev
 ```
 
-O arquivo `.env.local` já está presente e ignorado pelo Git. Se estiver preparando um clone, copie `.env.example` para `.env.local` e defina somente a URL do Supabase e a chave anon/public. Nunca use `service_role` no navegador.
-
-Sem configuração válida do Supabase, o app mostra uma tela de configuração em vez de iniciar com dados fictícios. Durante desenvolvimento local, o protótipo isolado pode ser aberto explicitamente em `/?demo=1`; esse bypass é desativado em builds de produção.
+Sem Supabase configurado, o app mostra uma tela de configuração. O protótipo visual local pode ser aberto em `/?demo=1`; para revisar os três módulos novos com dados locais, use `/?demo=1&management=1`. Esses bypasses só funcionam em desenvolvimento.
 
 ```bash
+npm test
 npm run build
 npm run preview
 ```
 
-## Supabase e primeiro acesso
+## Validação antes da produção
 
-1. No SQL Editor do Supabase, aplique **somente** `20261012010000_frontdesk_client_visibility.sql`. A migration base já está aplicada.
-2. Em Authentication → URL Configuration, configure a URL local e as URLs de produção permitidas. O fluxo de confirmação retorna para a origem atual (`window.location.origin`).
-3. Crie a conta administradora na tela de cadastro; confirme o e-mail se o projeto exigir confirmação.
-4. Entre, cadastre a empresa **Espaço Bruna Alves**, a unidade principal, o primeiro profissional e um serviço.
-5. Cadastre uma cliente e então teste um agendamento futuro. A RPC do banco valida permissões, serviço habilitado, bloqueios e conflito de horário.
-6. Teste a fila de encaixe e o reagendamento por arrastar/selecionar no Kanban. O servidor continua sendo a autoridade final de disponibilidade.
+1. Confirmar que o bundle contém uma chave `sb_publishable_...`, nunca `service_role`/`sb_secret_...`.
+2. Aplicar as duas migrations pendentes na ordem documentada.
+3. Testar uma sessão administradora com dados reais.
+4. Cadastrar produto e validar entrada, saída e bloqueio de saldo negativo.
+5. Configurar regra de comissão e fechar uma comanda com PIX e pagamento dividido.
+6. Confirmar que atendimento, pagamento e comissão são atualizados juntos.
+7. Registrar despesa e conferir o saldo do mês.
+8. Registrar repasse e validar a visão do profissional.
+9. Testar RLS com administrador, recepcionista e profissional.
+10. Só então promover o deploy para produção.
 
-A chave anon/public pode estar no frontend porque as tabelas usam RLS; a chave `service_role` jamais deve ser colocada em `VITE_*`, `.env.local` do cliente, no Git ou no navegador.
+## Vercel
 
-### Histórico de migrations
+Configure em **Production**, **Preview** e **Development**, conforme necessário:
 
-A migration base foi aplicada manualmente pelo SQL Editor e não foi registrada via Supabase CLI. Antes de qualquer `supabase db push`, alinhe o histórico remoto/local; não tente reaplicar a migration base. O projeto não foi publicado nem conectado à Vercel.
+- `VITE_SUPABASE_URL`
+- `VITE_SUPABASE_PUBLISHABLE_KEY`
 
-## GitHub e Vercel
-
-- Repositório informado: `https://github.com/alvesadryano-bit/espaco-bruna-alves`.
-- Build Vite gera `dist/`; `vercel.json` contém configuração inicial.
-- Na Vercel, configure `VITE_SUPABASE_URL` e `VITE_SUPABASE_ANON_KEY` nos ambientes corretos e inclua o domínio de produção na lista de redirect URLs do Supabase.
-- Nenhum commit, push ou deploy foi feito nesta etapa. Faça deploy de produção somente depois de aplicar a migration complementar e testar login, RLS, agenda, cadastro de cliente e Kanban com dados reais.
+Alterações de variáveis só entram em um novo deployment. O `vercel.json` adiciona cabeçalhos de segurança, bloqueio de indexação e a política de conexão limitada ao projeto Supabase atual.
