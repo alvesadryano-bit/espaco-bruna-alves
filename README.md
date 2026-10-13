@@ -8,6 +8,7 @@ Sistema de gestão para salão/estética em Vite + Supabase. O frontend usa Supa
 
 - Login e confirmação de e-mail; cadastro público removido.
 - Área **Usuários** para convites, perfis de administrador/recepcionista/profissional, alteração e remoção de acessos.
+- Tema visual compartilhado, configurável somente pela administradora com paletas prontas ou cor personalizada.
 - Novas contas entram na empresa existente por convite pessoal; a criação de novas empresas está bloqueada.
 - Clientes, agenda diária, fila de encaixe e reagendamento por Kanban.
 - Estoque real: produtos, saldo por unidade, entradas, consumo, perdas, devoluções, ajustes, custo médio e histórico.
@@ -51,6 +52,12 @@ O Supabase Auth precisa continuar aceitando criação de usuários por e-mail pa
 
 O redirecionamento usa `https://espacobrunaalves.vercel.app?password-reset=1`, coberto pela regra curinga recomendada acima.
 
+## Aparência da empresa
+
+A administradora pode abrir **Personalizar cores** no menu do perfil e escolher entre paletas prontas ou uma cor personalizada. A cor-base é armazenada na empresa e carregada por Administrador, Recepcionista e Profissional. O frontend deriva tons com contraste seguro para menu, botões, links, seleções e destaques, preservando as cores próprias de sucesso, alerta e erro.
+
+A gravação usa a RPC autenticada `update_business_theme`; ela confirma o perfil administrador e registra a alteração em `audit_logs`. Outros usuários recebem o novo tema no próximo carregamento da plataforma.
+
 ## Migrations
 
 A migration base abaixo foi aplicada manualmente anteriormente e **não deve ser executada de novo**:
@@ -63,8 +70,9 @@ Aplique uma única vez, nesta ordem:
 2. `20261012020000_management_modules.sql`
 3. `20261012030000_user_access_management.sql`
 4. `20261012040000_user_invitation_names.sql`
+5. `20261013000000_business_theme_customization.sql`
 
-As três primeiras já podem estar aplicadas no ambiente de produção. A terceira adiciona convites internos, perfis, revogação de acessos e bloqueia a criação de empresas adicionais. A quarta adiciona o nome ao convite e permite criar automaticamente a ficha de um novo profissional.
+As quatro primeiras já estão aplicadas no ambiente de produção. A terceira adiciona convites internos, perfis, revogação de acessos e bloqueia a criação de empresas adicionais. A quarta adiciona o nome ao convite e permite criar automaticamente a ficha de um novo profissional. A quinta adiciona a cor-base da empresa e a RPC administrativa auditada para personalização do tema.
 
 As migrations dos módulos criam tabelas, RLS e RPCs para:
 
