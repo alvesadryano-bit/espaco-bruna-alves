@@ -446,9 +446,9 @@
     </nav>
     <div class="nav-section">Gestão</div>
     <nav class="nav-list" aria-label="Gestão">
-      <button class="nav-link" data-page="estoque"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="m12 3 9 5-9 5-9-5 9-5Z"/><path d="m3 12 9 5 9-5M3 16l9 5 9-5M12 13v8"/></svg>Estoque <span class="nav-badge">2</span><span class="nav-status" style="display:none">Ativo</span></button>
-      <button class="nav-link" data-page="financeiro" data-admin-only="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="m19 9-5 5-4-4-5 5"/><path d="M16 9h3v3"/></svg>Financeiro<span class="nav-status" style="display:none">Ativo</span></button>
-      <button class="nav-link" data-page="comissoes"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M16 8h-5.5a2.5 2.5 0 0 0 0 5H13a2.5 2.5 0 0 1 0 5H8M12 6v2m0 10v2"/></svg>Comissões<span class="nav-status" style="display:none">Ativo</span></button>
+      <button class="nav-link" data-page="estoque"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="m12 3 9 5-9 5-9-5 9-5Z"/><path d="m3 12 9 5 9-5M3 16l9 5 9-5M12 13v8"/></svg>Estoque <span class="nav-badge">2</span><span class="nav-status" style="display:none"></span></button>
+      <button class="nav-link" data-page="financeiro" data-admin-only="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="m19 9-5 5-4-4-5 5"/><path d="M16 9h3v3"/></svg>Financeiro<span class="nav-status" style="display:none"></span></button>
+      <button class="nav-link" data-page="comissoes"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M16 8h-5.5a2.5 2.5 0 0 0 0 5H13a2.5 2.5 0 0 1 0 5H8M12 6v2m0 10v2"/></svg>Comissões<span class="nav-status" style="display:none"></span></button>
     </nav>
     <div class="sidebar-spacer"></div>
     <div class="sidebar-help"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><path d="M9.5 9a2.5 2.5 0 1 1 4.5 1.5c-1.2 1-2 1.5-2 3M12 17h.01"/></svg><div><strong>Precisa de ajuda?</strong><small>Fale com nosso suporte</small></div></div>
@@ -773,7 +773,7 @@
       const recepHidden=state.role==='Recepcionista'&&['estoque','financeiro','comissoes'].includes(pg);
       const profHidden=state.role==='Profissional'&&['estoque','financeiro'].includes(pg);
       btn.style.display=(recepHidden||profHidden)?'none':'flex';
-      const status=btn.querySelector('.nav-status');if(status){status.style.display=managementLive?'inline-flex':'none';status.textContent=state.managementError?'Configurar':'Ativo';}
+      const status=btn.querySelector('.nav-status');if(status){const showConfigurationWarning=managementLive&&!!state.managementError;status.style.display=showConfigurationWarning?'inline-flex':'none';status.textContent=showConfigurationWarning?'Configurar':'';}
       const moduleBadge=btn.querySelector('.nav-badge');if(moduleBadge&&pg!=='agenda')moduleBadge.style.display=managementLive?'none':'grid';
     });
     const agendaBadge=document.querySelector('[data-page="agenda"] .nav-badge');
@@ -1332,5 +1332,5 @@
   }
   bootApplication();
 </script>
-</body>
+<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a49a7fdf9beeb6fb',t:'MTc5MTg1NDE5Mg=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>
