@@ -37,7 +37,7 @@ Se uma `service_role` já foi publicada no bundle, substitua-a por uma chave pub
 
 ## Convites e contas da equipe
 
-A tela pública não oferece cadastro. A administradora gera o convite em **Usuários**, escolhe o perfil e envia o link à pessoa. O link exige o mesmo e-mail do convite, expira em 7 dias e vincula a nova conta à empresa já existente.
+A tela pública não oferece cadastro. A administradora informa nome e e-mail em **Usuários**, escolhe o perfil e envia o link à pessoa. O link exige o mesmo e-mail do convite, expira em 7 dias e vincula a nova conta à empresa já existente. Ao escolher **Profissional**, a plataforma cria automaticamente a ficha da agenda com o nome informado; o uso de um profissional já cadastrado fica disponível como opção para preservar histórico.
 
 O Supabase Auth precisa continuar aceitando criação de usuários por e-mail para que o link de convite possa concluir o cadastro. Isso não libera dados: sem aceitar um convite válido, a conta não recebe `business_membership` e permanece sem acesso. Configure `https://espacobrunaalves.vercel.app/**` em **Authentication → URL Configuration → Redirect URLs** para a confirmação de e-mail retornar ao convite.
 
@@ -52,8 +52,9 @@ Aplique uma única vez, nesta ordem:
 1. `20261012010000_frontdesk_client_visibility.sql`
 2. `20261012020000_management_modules.sql`
 3. `20261012030000_user_access_management.sql`
+4. `20261012040000_user_invitation_names.sql`
 
-As duas primeiras já podem estar aplicadas no ambiente de produção. A terceira adiciona convites internos, perfis, revogação de acessos e bloqueia a criação de empresas adicionais.
+As três primeiras já podem estar aplicadas no ambiente de produção. A terceira adiciona convites internos, perfis, revogação de acessos e bloqueia a criação de empresas adicionais. A quarta adiciona o nome ao convite e permite criar automaticamente a ficha de um novo profissional.
 
 As migrations dos módulos criam tabelas, RLS e RPCs para:
 
