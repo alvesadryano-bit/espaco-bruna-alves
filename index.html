@@ -247,7 +247,11 @@
     .tag.gold { background:#f8f1e6;color:#a9844d; }
     .tag.blue { background:#edf3f7;color:#66839a; }
     .tag.gray { background:#f1f2f0;color:#89928c; }
-    .table-action { display:inline-grid;place-items:center;width:27px;height:27px;border:1px solid #ecefeb;border-radius:8px;color:#77847c;background:#fff; }
+    .table-action { display:inline-grid;place-items:center;width:27px;height:27px;border:1px solid #ecefeb;border-radius:8px;color:#77847c;background:#fff;cursor:pointer; }
+    .user-actions { display:flex;justify-content:flex-end;gap:6px; }
+    .invite-link { display:flex;align-items:center;gap:8px;margin-top:13px;padding:10px;border:1px solid #e3e9e4;border-radius:10px;background:#f8faf8; }
+    .invite-link input { min-width:0;flex:1;border:0;background:transparent;color:#53635a;font-size:10px;outline:0; }
+    .access-scope { display:block;margin-top:3px;color:#99a49d;font-size:8px; }
     .table-footer { display:flex;justify-content:space-between;align-items:center;padding:13px 16px;border-top:1px solid #f0f2ef;color:#9ba59f;font-size:9px; }
     .filter-tabs { display:flex;align-items:center;gap:5px;padding:4px;border:1px solid #e9ede9;border-radius:10px;background:#f6f8f5; }
     .filter-tabs button { padding:7px 10px;border:0;border-radius:7px;background:transparent;color:#8a9690;font-size:9px;font-weight:650; }
@@ -449,6 +453,7 @@
       <button class="nav-link" data-page="estoque"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="m12 3 9 5-9 5-9-5 9-5Z"/><path d="m3 12 9 5 9-5M3 16l9 5 9-5M12 13v8"/></svg>Estoque <span class="nav-badge">2</span><span class="nav-status" style="display:none"></span></button>
       <button class="nav-link" data-page="financeiro" data-admin-only="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="m19 9-5 5-4-4-5 5"/><path d="M16 9h3v3"/></svg>Financeiro<span class="nav-status" style="display:none"></span></button>
       <button class="nav-link" data-page="comissoes"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M16 8h-5.5a2.5 2.5 0 0 0 0 5H13a2.5 2.5 0 0 1 0 5H8M12 6v2m0 10v2"/></svg>Comissões<span class="nav-status" style="display:none"></span></button>
+      <button class="nav-link" data-page="usuarios" data-admin-only="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg>Usuários</button>
     </nav>
     <div class="sidebar-spacer"></div>
     <div class="sidebar-help"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><path d="M9.5 9a2.5 2.5 0 1 1 4.5 1.5c-1.2 1-2 1.5-2 3M12 17h.01"/></svg><div><strong>Precisa de ajuda?</strong><small>Fale com nosso suporte</small></div></div>
@@ -532,7 +537,9 @@
     ],
     managementLoaded:false, managementLoading:false, managementError:'', managementPreview:false,
     inventoryProducts:[], stockMovements:[], checkouts:[], checkoutPayments:[], expenses:[],
-    commissionEntries:[], commissionPayouts:[], commissionRules:[]
+    commissionEntries:[], commissionPayouts:[], commissionRules:[],
+    usersLoaded:false, usersLoading:false, usersError:'', businessUsers:[], userInvitations:[],
+    pendingInvitationToken:'', invitationDetails:null
   };
   const demoServiceOptions=[
     {name:'Corte feminino',duration:45,price:145},
@@ -544,6 +551,8 @@
     {name:'Escova modelada',duration:60,price:120},
     {name:'Mechas + tonalização',duration:90,price:520}
   ];
+  const accessRoleLabels={admin:'Administrador',receptionist:'Recepcionista',professional:'Profissional'};
+  const accessRoleLabel=role=>accessRoleLabels[role]||role||'Acesso';
   const money = n => new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'}).format(Number(n)||0);
   const initials = name => name.split(' ').filter(Boolean).slice(0,2).map(s=>s[0]).join('').toUpperCase();
   const dateFmt = (date, opts={weekday:'long',day:'numeric',month:'long',year:'numeric'}) => new Intl.DateTimeFormat('pt-BR',opts).format(date);
@@ -568,19 +577,51 @@
     const alert=message?`<div class="auth-error" role="alert">${safe(message)}</div>`:'';
     const header=`<div class="auth-brand">ESPAÇO <span>BRUNA ALVES</span></div>`;
     if(view==='loading'){root.innerHTML=`<div class="auth-card"><div class="auth-brand">ESPAÇO <span>BRUNA ALVES</span></div><p class="auth-loading">Conectando ao Espaço Bruna Alves…</p></div>`;return;}
-    if(view==='login'||view==='signup'){
-      const signup=view==='signup';root.innerHTML=`<div class="auth-card">${header}<h1>${signup?'Criar acesso':'Bem-vinda de volta'}</h1><p class="auth-subtitle">${signup?'Crie o acesso da pessoa administradora do Espaço Bruna Alves.':'Entre para acessar a agenda e os dados autorizados da sua empresa.'}</p>${alert}<form id="authForm" data-mode="${view}">${signup?'<div class="form-field"><label>Nome completo</label><input name="fullName" autocomplete="name" required maxlength="100"></div>':''}<div class="form-field"><label>E-mail</label><input name="email" type="email" autocomplete="email" required></div><div class="form-field"><label>Senha</label><input name="password" type="password" autocomplete="${signup?'new-password':'current-password'}" minlength="8" required></div><button class="btn btn-primary" type="submit">${signup?'Criar conta':'Entrar'}</button></form><p class="auth-switch">${signup?'Já tem acesso?':'Ainda não tem acesso?'} <button type="button" data-action="auth-mode-${signup?'login':'signup'}">${signup?'Entrar':'Criar conta'}</button></p><p class="auth-note">A senha é enviada diretamente ao Supabase Auth e não é armazenada pelo protótipo.</p></div>`;return;
+    if(view==='login'){
+      root.innerHTML=`<div class="auth-card">${header}<h1>Bem-vinda de volta</h1><p class="auth-subtitle">Entre para acessar a agenda e os dados autorizados da sua empresa.</p>${alert}<form id="authForm" data-mode="login"><div class="form-field"><label>E-mail</label><input name="email" type="email" autocomplete="email" required></div><div class="form-field"><label>Senha</label><input name="password" type="password" autocomplete="current-password" minlength="8" required></div><button class="btn btn-primary" type="submit">Entrar</button></form><p class="auth-note">Novos acessos são criados pela administradora na área Usuários.</p></div>`;return;
+    }
+    if(view==='invite'){
+      const invitation=state.invitationDetails;if(!invitation){renderAuthGate('login','Convite inválido ou expirado.');return;}
+      root.innerHTML=`<div class="auth-card">${header}<h1>Ativar seu acesso</h1><p class="auth-subtitle">Você foi convidada para ${safe(invitation.business_name)} como ${safe(accessRoleLabel(invitation.role).toLowerCase())}.</p>${alert}<form id="invitationSignupForm"><div class="form-field"><label>Nome completo</label><input name="fullName" autocomplete="name" required maxlength="100"></div><div class="form-field"><label>E-mail do convite</label><input value="${safe(invitation.email)}" type="email" readonly></div><div class="form-field"><label>Crie sua senha</label><input name="password" type="password" autocomplete="new-password" minlength="8" required></div><button class="btn btn-primary" type="submit">Criar meu acesso</button></form><p class="auth-switch">Já possui uma conta? <button type="button" data-action="invite-use-login">Entrar e aceitar</button></p><p class="auth-note">Este convite é pessoal, expira em 7 dias e funciona apenas com o e-mail informado.</p></div>`;return;
+    }
+    if(view==='invite-login'){
+      const invitation=state.invitationDetails;if(!invitation){renderAuthGate('login','Convite inválido ou expirado.');return;}
+      root.innerHTML=`<div class="auth-card">${header}<h1>Entrar e aceitar convite</h1><p class="auth-subtitle">Use a conta de ${safe(invitation.email)} para entrar em ${safe(invitation.business_name)}.</p>${alert}<form id="invitationLoginForm"><div class="form-field"><label>E-mail</label><input value="${safe(invitation.email)}" type="email" readonly></div><div class="form-field"><label>Senha</label><input name="password" type="password" autocomplete="current-password" minlength="8" required></div><button class="btn btn-primary" type="submit">Entrar e aceitar</button></form><p class="auth-switch"><button type="button" data-action="invite-use-signup">Criar uma conta nova</button></p></div>`;return;
+    }
+    if(view==='access-pending'){
+      root.innerHTML=`<div class="auth-card">${header}<h1>Acesso ainda não vinculado</h1><p class="auth-subtitle">Esta conta não pertence a nenhuma empresa. Peça à administradora para gerar um convite em Usuários e abra o link usando este mesmo e-mail.</p>${alert}<button type="button" class="btn btn-primary" data-action="auth-logout">Sair desta conta</button></div>`;return;
     }
     if(view==='confirm'){
       root.innerHTML=`<div class="auth-card">${header}<h1>Confirme seu e-mail</h1><p class="auth-subtitle">${safe(message||'Enviamos um link de confirmação. Abra o e-mail e depois volte para entrar.')}</p><button type="button" class="btn btn-primary" data-action="auth-mode-login">Voltar ao login</button><p class="auth-note">Se não encontrar a mensagem, confira a pasta de spam.</p></div>`;return;
     }
-    if(view==='business'){
-      root.innerHTML=`<div class="auth-card">${header}<h1>Configure sua empresa</h1><p class="auth-subtitle">Este acesso ainda não está vinculado a uma empresa. Vamos cadastrar o espaço e a unidade principal.</p>${alert}<form id="businessSetupForm"><div class="form-field"><label>Nome da empresa</label><input name="businessName" value="Espaço Bruna Alves" required maxlength="140"></div><div class="form-field"><label>Identificador (slug)</label><input name="slug" value="espaco-bruna-alves" pattern="[a-z0-9]+(-[a-z0-9]+)*" required maxlength="80"></div><div class="form-field"><label>Nome da unidade</label><input name="branchName" value="Unidade principal" required maxlength="100"></div><button class="btn btn-primary" type="submit">Criar empresa e continuar</button></form><p class="auth-note">A primeira conta criada neste espaço receberá o papel de administradora.</p></div>`;return;
-    }
-    if(view==='catalog'){
-      root.innerHTML=`<div class="auth-card">${header}<h1>Configuração inicial</h1><p class="auth-subtitle">Cadastre um profissional e um serviço real para habilitar os primeiros agendamentos.</p>${alert}<form id="catalogSetupForm"><div class="form-field"><label>Nome do primeiro profissional</label><input name="professionalName" value="${safe(state.currentName||'')}" required maxlength="100"></div><div class="form-field"><label>Primeiro serviço</label><input name="serviceName" placeholder="Ex.: Corte feminino" required maxlength="100"></div><div class="form-grid" style="grid-template-columns:1fr 1fr"><div class="form-field"><label>Duração (minutos)</label><input name="duration" type="number" min="5" max="1440" step="5" value="60" required></div><div class="form-field"><label>Preço (R$)</label><input name="price" type="number" min="0" step="0.01" placeholder="150,00" required></div></div><button class="btn btn-primary" type="submit">Salvar e abrir agenda</button></form><p class="auth-note">Você poderá cadastrar outros serviços e profissionais depois.</p></div>`;return;
-    }
     root.innerHTML=`<div class="auth-card">${header}<h1>Não foi possível conectar</h1>${alert}<button type="button" class="btn btn-primary" data-action="auth-retry">Tentar novamente</button></div>`;
+  }
+  function invitationTokenFromContext(){
+    const queryToken=new URLSearchParams(window.location.search).get('invite')||'';
+    let storedToken='';try{storedToken=localStorage.getItem('pendingInvitationToken')||'';}catch{}
+    const token=queryToken||storedToken;return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(token)?token:'';
+  }
+  async function loadInvitationDetails(token){
+    if(!token)return null;
+    const {data,error}=await supabaseClient.rpc('get_user_invitation',{p_token:token});
+    if(error)throw new Error(error.message);
+    const invitation=Array.isArray(data)?data[0]:data;
+    return invitation||null;
+  }
+  function clearInvitationContext(){
+    try{localStorage.removeItem('pendingInvitationToken');}catch{}
+    state.pendingInvitationToken='';state.invitationDetails=null;
+    if(new URLSearchParams(window.location.search).has('invite'))history.replaceState({},'',window.location.pathname);
+  }
+  async function acceptPendingInvitation(session){
+    const token=state.pendingInvitationToken;if(!token)return true;
+    const sessionEmail=String(session.user.email||'').toLowerCase();const invitationEmail=String(state.invitationDetails?.email||'').toLowerCase();
+    if(invitationEmail&&sessionEmail!==invitationEmail){renderAuthGate('invite-login',`Você está conectada como ${session.user.email}. Entre com ${invitationEmail} para aceitar este convite.`);return false;}
+    try{
+      const {error}=await supabaseClient.rpc('accept_user_invitation',{p_token:token});
+      if(error){renderAuthGate('invite-login',friendlyError(error,'Não foi possível aceitar o convite.'));return false;}
+      clearInvitationContext();return true;
+    }catch(error){renderAuthGate('invite-login',friendlyError(error,'Não foi possível aceitar o convite.'));return false;}
   }
   async function bootApplication(){
     if(!supabaseClient){
@@ -589,10 +630,20 @@
       state.supabaseMode=true;renderAuthGate('issue','Supabase não configurado. Defina VITE_SUPABASE_URL e VITE_SUPABASE_PUBLISHABLE_KEY para habilitar os dados reais.');return;
     }
     state.supabaseMode=true;renderAuthGate('loading');
+    const token=invitationTokenFromContext();
+    if(token){
+      state.pendingInvitationToken=token;try{localStorage.setItem('pendingInvitationToken',token);}catch{}
+      try{state.invitationDetails=await loadInvitationDetails(token);}catch(error){renderAuthGate('login','Não foi possível validar o convite: '+error.message);return;}
+      if(!state.invitationDetails){clearInvitationContext();renderAuthGate('login','Este convite é inválido, expirou ou já foi utilizado.');return;}
+    }
     const {data,error}=await supabaseClient.auth.getSession();
     if(error){renderAuthGate('login','Falha ao iniciar sessão: '+error.message);return;}
-    if(data.session)await loadAuthenticatedWorkspace(data.session);else renderAuthGate('login');
-    supabaseClient.auth.onAuthStateChange((event)=>{if(event==='SIGNED_OUT'){state.authenticated=false;state.session=null;state.businessId=null;state.branchId=null;state.clients=[];state.appointments=[];state.waitlist=[];state.managementLoaded=false;state.inventoryProducts=[];state.stockMovements=[];state.checkouts=[];state.checkoutPayments=[];state.expenses=[];state.commissionEntries=[];state.commissionPayouts=[];state.commissionRules=[];renderAuthGate('login');}});
+    if(data.session){
+      if(token&&!(await acceptPendingInvitation(data.session)))return;
+      await loadAuthenticatedWorkspace(data.session);
+    }else if(token&&state.invitationDetails)renderAuthGate('invite');
+    else renderAuthGate('login');
+    supabaseClient.auth.onAuthStateChange((event)=>{if(event==='SIGNED_OUT'){state.authenticated=false;state.session=null;state.businessId=null;state.branchId=null;state.clients=[];state.appointments=[];state.waitlist=[];state.managementLoaded=false;state.inventoryProducts=[];state.stockMovements=[];state.checkouts=[];state.checkoutPayments=[];state.expenses=[];state.commissionEntries=[];state.commissionPayouts=[];state.commissionRules=[];state.usersLoaded=false;state.businessUsers=[];state.userInvitations=[];renderAuthGate(state.invitationDetails?'invite':'login');}});
   }
   async function loadAuthenticatedWorkspace(session){
     state.session=session;
@@ -601,7 +652,7 @@
     state.currentName=profileResult.data?.display_name||session.user.user_metadata?.full_name||session.user.email?.split('@')[0]||'Administradora';
     const memberResult=await supabaseClient.from('business_memberships').select('business_id,role,branch_id,professional_id').eq('user_id',session.user.id).limit(20);
     if(memberResult.error){renderAuthGate('login','Não foi possível carregar as permissões: '+memberResult.error.message);return;}
-    if(!memberResult.data?.length){renderAuthGate('business');return;}
+    if(!memberResult.data?.length){renderAuthGate('access-pending');return;}
     const membership=memberResult.data.find(item=>item.role==='admin')||memberResult.data[0];
     const branchResult=await supabaseClient.from('branches').select('id,name,timezone').eq('business_id',membership.business_id).eq('active',true).order('name');
     if(branchResult.error||!branchResult.data?.length){renderAuthGate('issue',branchResult.error?.message||'Nenhuma unidade ativa foi encontrada.');return;}
@@ -611,35 +662,8 @@
     state.role=membership.role==='admin'?'Administrador':membership.role==='receptionist'?'Recepcionista':'Profissional';state.authenticated=true;
     state.date=new Date();state.appointments=[];state.waitlist=[];state.clients=[];state.products=[];
     try{await loadSupabaseAgenda();}catch(error){state.authenticated=false;renderAuthGate('issue',error.message||'Falha ao carregar os dados.');return;}
-    await loadManagementData();
+    await Promise.all([loadManagementData(),state.role==='Administrador'?loadUsersData():Promise.resolve()]);
     document.body.classList.remove('auth-required');document.getElementById('authRoot').hidden=true;render();
-  }
-  async function createFirstBusiness(form){
-    const data=new FormData(form);const name=String(data.get('businessName')||'').trim();const slug=String(data.get('slug')||'').trim().toLowerCase();const branchName=String(data.get('branchName')||'').trim();
-    if(!/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(slug)){renderAuthGate('business','Use somente letras minúsculas, números e hífens no identificador.');return;}
-    const {data:businessId,error}=await supabaseClient.rpc('create_first_business',{p_name:name,p_slug:slug,p_branch_name:branchName});
-    if(error){renderAuthGate('business',error.message);return;}
-    state.pendingBusinessId=businessId;
-    const {data:branches,error:branchError}=await supabaseClient.from('branches').select('id').eq('business_id',businessId).eq('active',true).limit(1);
-    if(branchError||!branches?.length){renderAuthGate('business',branchError?.message||'Empresa criada, mas não foi possível localizar a unidade.');return;}
-    state.pendingBranchId=branches[0].id;renderAuthGate('catalog');
-  }
-  async function createInitialCatalog(form){
-    const data=new FormData(form);const professionalName=String(data.get('professionalName')||'').trim();const serviceName=String(data.get('serviceName')||'').trim();const duration=Number(data.get('duration'));const price=Number(data.get('price'));
-    if(!state.pendingBusinessId||!state.pendingBranchId){renderAuthGate('business','Sessão de configuração expirada. Entre novamente para continuar.');return;}
-    let proResult=await supabaseClient.from('professionals').select('id').eq('business_id',state.pendingBusinessId).eq('display_name',professionalName).limit(1).maybeSingle();
-    if(proResult.error){renderAuthGate('catalog',proResult.error.message);return;}
-    let professionalId=proResult.data?.id;
-    if(!professionalId){const inserted=await supabaseClient.from('professionals').insert({business_id:state.pendingBusinessId,display_name:professionalName}).select('id').single();if(inserted.error){renderAuthGate('catalog',inserted.error.message);return;}professionalId=inserted.data.id;}
-    let serviceResult=await supabaseClient.from('services').select('id').eq('business_id',state.pendingBusinessId).eq('name',serviceName).limit(1).maybeSingle();
-    if(serviceResult.error){renderAuthGate('catalog',serviceResult.error.message);return;}
-    let serviceId=serviceResult.data?.id;
-    if(!serviceId){const inserted=await supabaseClient.from('services').insert({business_id:state.pendingBusinessId,name:serviceName,duration_minutes:duration,default_price:price}).select('id').single();if(inserted.error){renderAuthGate('catalog',inserted.error.message);return;}serviceId=inserted.data.id;}
-    const branchAssignment=await supabaseClient.from('professional_branches').upsert({business_id:state.pendingBusinessId,professional_id:professionalId,branch_id:state.pendingBranchId,active:true},{onConflict:'professional_id,branch_id'});
-    if(branchAssignment.error){renderAuthGate('catalog',branchAssignment.error.message);return;}
-    const serviceAssignment=await supabaseClient.from('professional_services').upsert({business_id:state.pendingBusinessId,professional_id:professionalId,service_id:serviceId,active:true},{onConflict:'professional_id,service_id'});
-    if(serviceAssignment.error){renderAuthGate('catalog',serviceAssignment.error.message);return;}
-    state.pendingBusinessId=null;state.pendingBranchId=null;await loadAuthenticatedWorkspace(state.session);
   }
   async function loadSupabaseAgenda(){
     const businessId=state.businessId,branchId=state.branchId;
@@ -679,6 +703,10 @@
   function seedManagementPreview(){
     const now=new Date();const daysAgo=days=>new Date(now.getTime()-days*86400000).toISOString();
     state.managementPreview=true;state.managementLoaded=true;state.managementError='';state.currentName='Bruna Alves';state.currentProfessionalId='professional-1';state.role='Administrador';state.branchName='Unidade principal';
+    state.usersLoaded=true;state.usersError='';state.businessUsers=[
+      {record_type:'member',record_id:'membership-admin',user_id:'user-admin',display_name:'Bruna Alves',email:'admin@exemplo.com',role:'admin',branch_id:null,branch_name:null,professional_id:null,professional_name:null,status:'active',created_at:daysAgo(90),is_current_user:true},
+      {record_type:'member',record_id:'membership-reception',user_id:'user-reception',display_name:'Ana Oliveira',email:'recepcao@exemplo.com',role:'receptionist',branch_id:'branch-1',branch_name:'Unidade principal',professional_id:null,professional_name:null,status:'active',created_at:daysAgo(45),is_current_user:false}
+    ];state.userInvitations=[{record_type:'invitation',record_id:'invitation-1',email:'marina@exemplo.com',role:'professional',branch_id:'branch-1',branch_name:'Unidade principal',professional_id:'professional-1',professional_name:'Marina Costa',status:'pending',invitation_token:'00000000-0000-4000-8000-000000000001',created_at:daysAgo(1),expires_at:new Date(now.getTime()+6*86400000).toISOString(),is_current_user:false}];
     state.clients=state.clients.map((client,index)=>({...client,backendId:`client-${index+1}`}));
     state.services=demoServiceOptions.slice(0,6).map((service,index)=>({id:index+1,backendId:`service-${index+1}`,...service}));
     state.professionals=['Marina Costa','Paula Mendes','Júlia Freitas'].map((name,index)=>({id:index+1,backendId:`professional-${index+1}`,name}));
@@ -748,6 +776,17 @@
     }finally{state.managementLoading=false;}
   }
   async function refreshManagementData(){await loadManagementData();render();}
+  async function loadUsersData(){
+    if(!state.supabaseMode||!state.authenticated||state.role!=='Administrador')return;
+    state.usersLoading=true;state.usersError='';
+    try{
+      const {data,error}=await supabaseClient.rpc('list_business_users',{p_business_id:state.businessId});
+      if(error)throw new Error(error.message);
+      const rows=data||[];state.businessUsers=rows.filter(item=>item.record_type==='member');state.userInvitations=rows.filter(item=>item.record_type==='invitation');state.usersLoaded=true;
+    }catch(error){state.usersLoaded=false;state.usersError=friendlyError(error,'Não foi possível carregar os usuários.');}
+    finally{state.usersLoading=false;}
+  }
+  async function refreshUsersData(){await loadUsersData();render();}
   async function refreshAgenda(){
     if(state.supabaseMode&&state.authenticated){try{await loadSupabaseAgenda();}catch(error){toast('Falha ao atualizar agenda: '+error.message);return;}}
     render();
@@ -768,11 +807,13 @@
   function render(){
     const live=state.supabaseMode&&state.authenticated;const managementLive=live||state.managementPreview;
     if(live&&state.role==='Profissional'&&state.calendarView==='kanban')state.calendarView='day';
+    if(live&&state.page==='usuarios'&&state.role!=='Administrador')state.page='agenda';
     document.querySelectorAll('.nav-link').forEach(btn=>{
       const pg=btn.dataset.page;btn.classList.toggle('active',pg===state.page);
       const recepHidden=state.role==='Recepcionista'&&['estoque','financeiro','comissoes'].includes(pg);
       const profHidden=state.role==='Profissional'&&['estoque','financeiro'].includes(pg);
-      btn.style.display=(recepHidden||profHidden)?'none':'flex';
+      const adminHidden=btn.dataset.adminOnly==='true'&&state.role!=='Administrador';
+      btn.style.display=(recepHidden||profHidden||adminHidden)?'none':'flex';
       const status=btn.querySelector('.nav-status');if(status){const showConfigurationWarning=managementLive&&!!state.managementError;status.style.display=showConfigurationWarning?'inline-flex':'none';status.textContent=showConfigurationWarning?'Configurar':'';}
       const moduleBadge=btn.querySelector('.nav-badge');if(moduleBadge&&pg!=='agenda')moduleBadge.style.display=managementLive?'none':'grid';
     });
@@ -796,9 +837,9 @@
     document.getElementById('currentBranchName').textContent=live?state.branchName:'Unidade principal';
     const globalSearch=document.getElementById('globalSearch');if(globalSearch)globalSearch.placeholder=live?'Buscar cliente...':'Buscar cliente, serviço...';
     const notifications=document.querySelector('[data-action="notifications"]');if(notifications)notifications.style.display=live?'none':'grid';
-    const pageNames={agenda:'AGENDA',clientes:'CLIENTES',servicos:'SERVIÇOS',estoque:'ESTOQUE',financeiro:'FINANCEIRO',comissoes:'COMISSÕES'};
+    const pageNames={agenda:'AGENDA',clientes:'CLIENTES',servicos:'SERVIÇOS',estoque:'ESTOQUE',financeiro:'FINANCEIRO',comissoes:'COMISSÕES',usuarios:'USUÁRIOS'};
     document.getElementById('breadcrumbPage').textContent=pageNames[state.page]||'AGENDA';
-    const pages={agenda:renderAgenda,clientes:renderClients,servicos:renderServices,estoque:renderInventory,financeiro:renderFinance,comissoes:renderCommissions};
+    const pages={agenda:renderAgenda,clientes:renderClients,servicos:renderServices,estoque:renderInventory,financeiro:renderFinance,comissoes:renderCommissions,usuarios:renderUsers};
     const managementPages=['estoque','financeiro','comissoes'];
     document.getElementById('pageContent').innerHTML=managementLive&&managementPages.includes(state.page)?renderLiveManagementPage(state.page):(pages[state.page]||renderAgenda)();
     document.getElementById('mobileOverlay').classList.remove('visible');document.getElementById('sidebar').classList.remove('open');
@@ -942,6 +983,18 @@
     const ruleRows=state.commissionRules.map(rule=>{const service=serviceById.get(rule.service_id);const pro=proById.get(rule.professional_id);const value=rule.rule_type==='percent'?`${Number(rule.value).toLocaleString('pt-BR',{maximumFractionDigits:2})}%`:money(rule.value);return `<tr><td><strong style="color:#45564c">${safe(service?.name||'Serviço')}</strong></td><td>${safe(pro?.name||'Regra geral')}</td><td>${value}</td><td>${dateTimeFmt(rule.valid_from)}</td></tr>`;}).join('');
     return `<div class="page-heading"><div><div class="eyebrow"><span class="eyebrow-dot"></span>${professionalView?'Seu painel':'Repasses da equipe'}</div><h1>${professionalView?'Minhas comissões':'Comissões'}</h1><p class="page-subtitle">Valores calculados no fechamento das comandas.</p></div><div class="heading-actions"><button class="btn" data-action="refresh-management">Atualizar</button>${professionalView?'':`<button class="btn" data-action="new-commission-rule">Configurar regra</button><button class="btn btn-primary" data-action="new-payout">${icons.wallet}Registrar repasse</button>`}</div></div><div class="metric-grid">${metric('Pendente de repasse',money(pending),`${entries.filter(item=>item.status==='pending').length} lançamentos`,icons.wallet)}${metric('Pago neste mês',money(paidMonth),'repasses confirmados',icons.check,'peach')}${metric('Gerado neste mês',money(generatedMonth),'comandas finalizadas',icons.spark,'lavender')}${metric(professionalView?'Serviços com comissão':'Regras ativas',String(professionalView?new Set(entries.map(item=>item.service_id)).size:state.commissionRules.length).padStart(2,'0'),'configuração atual',icons.people,'blue')}</div>${!professionalView&&!state.commissionRules.length?`<div class="notice" style="margin-bottom:15px">${icons.alert}<span><strong>Nenhuma regra ativa.</strong> Configure a comissão por serviço antes de fechar as próximas comandas.</span></div>`:''}<div class="card table-card"><div class="card-header" style="padding:17px 18px"><div><div class="card-title">Lançamentos de comissão</div><div class="card-subtitle">Histórico calculado por serviço realizado</div></div></div><table class="data-table"><thead><tr><th>Data</th><th>Serviço e regra</th>${professionalView?'':'<th>Profissional</th>'}<th>Comissão</th><th>Situação</th></tr></thead><tbody>${rows||`<tr><td colspan="${professionalView?4:5}"><div class="empty-state"><strong>Nenhuma comissão gerada</strong>Os lançamentos aparecem depois do fechamento das comandas.</div></td></tr>`}</tbody></table><div class="table-footer"><span>${entries.length} lançamentos</span><span>Base líquida após desconto proporcional</span></div></div>${professionalView?'':`<div class="card table-card" style="margin-top:16px"><div class="card-header" style="padding:17px 18px"><div><div class="card-title">Regras ativas</div><div class="card-subtitle">A regra específica do profissional prevalece sobre a regra geral</div></div></div><table class="data-table"><thead><tr><th>Serviço</th><th>Aplicação</th><th>Valor</th><th>Vigência</th></tr></thead><tbody>${ruleRows||'<tr><td colspan="4"><div class="empty-state">Nenhuma regra configurada.</div></td></tr>'}</tbody></table></div>`}`;
   }
+  function renderUsers(){
+    if(state.role!=='Administrador')return `<div class="card"><div class="empty-state"><strong>Acesso restrito</strong>Somente administradores podem gerenciar usuários.</div></div>`;
+    if(state.usersLoading&&!state.usersLoaded)return `<div class="page-heading"><div><div class="eyebrow"><span class="eyebrow-dot"></span>Controle de acesso</div><h1>Usuários</h1><p class="page-subtitle">Carregando perfis e convites…</p></div></div><div class="card"><div class="empty-state"><strong>Carregando usuários</strong>Sincronizando permissões com o Supabase.</div></div>`;
+    if(state.usersError)return `<div class="page-heading"><div><div class="eyebrow"><span class="eyebrow-dot"></span>Controle de acesso</div><h1>Usuários</h1><p class="page-subtitle">Gerencie quem pode acessar a plataforma.</p></div><button class="btn" data-action="refresh-users">Atualizar</button></div><div class="card" style="padding:26px 28px"><div class="notice">${icons.alert}<span><strong>Área indisponível.</strong> ${safe(state.usersError)}</span></div></div>`;
+    const members=state.businessUsers;const invitations=state.userInvitations;const pending=invitations.filter(item=>item.status==='pending');
+    const roleTag=role=>role==='admin'?'gold':role==='professional'?'blue':'';
+    const scope=item=>item.role==='admin'?'Todas as unidades':item.role==='professional'?(item.professional_name||'Profissional não definido'):(item.branch_name||state.branchName);
+    const memberRows=members.map(item=>`<tr><td><div class="table-person"><div class="avatar">${safe(initials(item.display_name||item.email))}</div><div><strong>${safe(item.display_name||item.email)}</strong><small>${safe(item.email)}</small></div></div></td><td><span class="tag ${roleTag(item.role)}">${safe(accessRoleLabel(item.role))}</span><span class="access-scope">${safe(scope(item))}</span></td><td><span class="status-pill done">Ativo</span></td><td>${dateTimeFmt(item.created_at)}</td><td><div class="user-actions"><button class="table-action" data-action="edit-user-access" data-id="${safe(item.record_id)}" aria-label="Editar acesso" title="Editar acesso">✎</button><button class="table-action" data-action="remove-user-access" data-id="${safe(item.record_id)}" aria-label="Remover acesso" title="Remover acesso" ${item.is_current_user?'disabled':''}>×</button></div></td></tr>`).join('');
+    const invitationRows=invitations.map(item=>`<tr><td><div class="table-person"><div class="avatar">${safe(initials(item.email))}</div><div><strong>${safe(item.email)}</strong><small>Convite ainda não aceito</small></div></div></td><td><span class="tag ${roleTag(item.role)}">${safe(accessRoleLabel(item.role))}</span><span class="access-scope">${safe(scope(item))}</span></td><td><span class="tag ${item.status==='pending'?'gold':'gray'}">${item.status==='pending'?'Convite pendente':'Expirado'}</span></td><td>${item.expires_at?dateTimeFmt(item.expires_at):'—'}</td><td><div class="user-actions">${item.status==='pending'?`<button class="table-action" data-action="copy-user-invite" data-id="${safe(item.record_id)}" aria-label="Copiar convite" title="Copiar convite">⧉</button>`:''}<button class="table-action" data-action="revoke-user-invite" data-id="${safe(item.record_id)}" aria-label="Revogar convite" title="Revogar convite">×</button></div></td></tr>`).join('');
+    const rows=memberRows+invitationRows;
+    return `<div class="page-heading"><div><div class="eyebrow"><span class="eyebrow-dot"></span>Controle de acesso</div><h1>Usuários</h1><p class="page-subtitle">Crie convites e defina o perfil de cada pessoa da equipe.</p></div><div class="heading-actions"><button class="btn" data-action="refresh-users">Atualizar</button><button class="btn btn-primary" data-action="new-user-invite">${icons.plus}Novo usuário</button></div></div><div class="metric-grid">${metric('Usuários ativos',String(members.length).padStart(2,'0'),'acessos vinculados',icons.people)}${metric('Administradores',String(members.filter(item=>item.role==='admin').length).padStart(2,'0'),'acesso completo',icons.spark,'peach')}${metric('Profissionais',String(members.filter(item=>item.role==='professional').length).padStart(2,'0'),'perfil individual',icons.people,'lavender')}${metric('Convites pendentes',String(pending.length).padStart(2,'0'),'válidos por 7 dias',icons.clock,'blue')}</div><div class="notice" style="margin-bottom:15px">${icons.check}<span>Novas contas só entram por convite. A empresa não é recriada e cada perfil recebe apenas as permissões autorizadas.</span></div><div class="card table-card"><table class="data-table"><thead><tr><th>Pessoa</th><th>Perfil e escopo</th><th>Situação</th><th>Criação / validade</th><th></th></tr></thead><tbody>${rows||'<tr><td colspan="5"><div class="empty-state"><strong>Nenhum usuário encontrado</strong>Crie o primeiro convite para sua equipe.</div></td></tr>'}</tbody></table><div class="table-footer"><span>${members.length} usuários · ${invitations.length} convites</span><span>Acesso protegido por perfil</span></div></div>`;
+  }
   function renderInventory(){
     const internal=state.products.filter(p=>p.type===state.inventoryTab);
     const rows=internal.map(p=>{
@@ -977,6 +1030,41 @@
   function openModal(html,wide=false){document.getElementById('modalRoot').innerHTML=`<div class="modal-backdrop" data-action="backdrop-close"><div class="modal ${wide?'wide':''}" role="dialog" aria-modal="true">${html}</div></div>`;}
   function closeModal(){document.getElementById('modalRoot').innerHTML='';}
   function modalHeader(title,sub){return `<div class="modal-header"><div><h2>${title}</h2><p>${sub}</p></div><button class="modal-close" data-action="close-modal" aria-label="Fechar">×</button></div>`;}
+  function availableProfessionalOptions(selectedId=''){
+    const used=new Set(state.businessUsers.filter(item=>item.role==='professional'&&item.professional_id!==selectedId).map(item=>item.professional_id));
+    state.userInvitations.filter(item=>item.status==='pending').forEach(item=>{if(item.professional_id!==selectedId)used.add(item.professional_id);});
+    return state.professionals.filter(item=>item.backendId===selectedId||!used.has(item.backendId)).map(item=>`<option value="${safe(item.backendId)}" ${item.backendId===selectedId?'selected':''}>${safe(item.name)}</option>`).join('');
+  }
+  function toggleAccessProfessionalField(form){
+    if(!form)return;const role=form.querySelector('[name="role"]')?.value;const wrapper=form.querySelector('[data-professional-field]');const select=form.querySelector('[name="professionalId"]');if(!wrapper||!select)return;wrapper.hidden=role!=='professional';select.required=role==='professional';if(role!=='professional')select.value='';
+  }
+  function newUserInviteModal(){
+    const professionals=availableProfessionalOptions();
+    openModal(`${modalHeader('Novo usuário','Escolha o perfil e gere um convite pessoal para a equipe.')}<div class="modal-body"><form id="userInviteForm"><div class="form-grid"><div class="form-field full"><label>E-mail da pessoa</label><input name="email" type="email" autocomplete="off" required maxlength="254" placeholder="pessoa@email.com"></div><div class="form-field full"><label>Perfil de acesso</label><select name="role" required><option value="receptionist">Recepcionista · agenda e clientes</option><option value="professional">Profissional · agenda própria e comissões</option><option value="admin">Administrador · acesso completo</option></select></div><div class="form-field full" data-professional-field hidden><label>Vincular ao profissional</label><select name="professionalId"><option value="">Selecione o profissional</option>${professionals}</select>${professionals?'':'<small style="display:block;margin-top:5px;color:#a37858">Todos os profissionais já possuem acesso ou convite pendente.</small>'}</div></div><div class="notice" style="margin-top:13px">${icons.check}<span>O convite expira em 7 dias. A pessoa criará a própria senha e entrará na empresa existente.</span></div><div class="modal-actions"><button type="button" class="btn" data-action="close-modal">Cancelar</button><button class="btn btn-primary" type="submit">${icons.plus}Gerar convite</button></div></form></div>`);
+    toggleAccessProfessionalField(document.getElementById('userInviteForm'));
+  }
+  function editUserAccessModal(id){
+    const member=state.businessUsers.find(item=>item.record_id===id);if(!member)return;
+    const professionals=availableProfessionalOptions(member.professional_id||'');
+    openModal(`${modalHeader('Editar acesso','Altere o perfil e o vínculo desta pessoa.')}<div class="modal-body"><form id="userAccessForm" data-id="${safe(member.record_id)}"><div class="detail-head"><div class="avatar">${safe(initials(member.display_name||member.email))}</div><div><strong>${safe(member.display_name||member.email)}</strong><small>${safe(member.email)}</small></div></div><div class="form-grid"><div class="form-field full"><label>Perfil de acesso</label><select name="role" required><option value="receptionist" ${member.role==='receptionist'?'selected':''}>Recepcionista · agenda e clientes</option><option value="professional" ${member.role==='professional'?'selected':''}>Profissional · agenda própria e comissões</option><option value="admin" ${member.role==='admin'?'selected':''}>Administrador · acesso completo</option></select></div><div class="form-field full" data-professional-field><label>Vincular ao profissional</label><select name="professionalId"><option value="">Selecione o profissional</option>${professionals}</select></div></div><div class="notice" style="margin-top:13px">${icons.alert}<span>A alteração passa a valer no próximo carregamento da conta desta pessoa.</span></div><div class="modal-actions"><button type="button" class="btn" data-action="close-modal">Cancelar</button><button class="btn btn-primary" type="submit">${icons.check}Salvar acesso</button></div></form></div>`);
+    toggleAccessProfessionalField(document.getElementById('userAccessForm'));
+  }
+  function showInvitationLink(invitation){
+    const link=`${window.location.origin}${window.location.pathname}?invite=${encodeURIComponent(invitation.invitation_token||invitation.invitationToken||'')}`;
+    openModal(`${modalHeader('Convite criado','Envie este link somente para o e-mail informado.')}<div class="modal-body"><div class="notice">${icons.check}<span>O convite foi criado e expira em 7 dias. Não abra o link na sessão da administradora.</span></div><div class="invite-link"><input id="invitationLink" value="${safe(link)}" readonly><button class="btn btn-primary" type="button" data-action="copy-current-invite">Copiar link</button></div><div class="modal-actions"><button type="button" class="btn" data-action="close-modal">Concluir</button></div></div>`);
+  }
+  async function copyText(value){
+    try{await navigator.clipboard.writeText(value);return true;}catch{}
+    const input=document.createElement('textarea');input.value=value;input.style.position='fixed';input.style.opacity='0';document.body.appendChild(input);input.select();const copied=document.execCommand('copy');input.remove();return copied;
+  }
+  function revokeUserInvitationModal(id){
+    const invitation=state.userInvitations.find(item=>item.record_id===id);if(!invitation)return;
+    openModal(`${modalHeader('Revogar convite','O link deixará de funcionar imediatamente.')}<div class="modal-body"><form id="revokeUserInvitationForm" data-id="${safe(id)}"><div class="notice">${icons.alert}<span>Revogar o convite enviado para <strong>${safe(invitation.email)}</strong>?</span></div><div class="modal-actions"><button type="button" class="btn" data-action="close-modal">Cancelar</button><button class="btn btn-primary" type="submit">Revogar convite</button></div></form></div>`);
+  }
+  function removeUserAccessModal(id){
+    const member=state.businessUsers.find(item=>item.record_id===id);if(!member||member.is_current_user)return;
+    openModal(`${modalHeader('Remover acesso','A conta continuará existindo, mas não verá dados da empresa.')}<div class="modal-body"><form id="removeUserAccessForm" data-id="${safe(id)}"><div class="notice">${icons.alert}<span>Remover o acesso de <strong>${safe(member.display_name||member.email)}</strong> como ${safe(accessRoleLabel(member.role).toLowerCase())}?</span></div><div class="modal-actions"><button type="button" class="btn" data-action="close-modal">Cancelar</button><button class="btn btn-primary" type="submit">Remover acesso</button></div></form></div>`);
+  }
   function appointmentModal(id){
     const live=state.supabaseMode&&state.authenticated;const a=state.appointments.find(x=>x.id===Number(id));if(!a)return;
     state.selectedAppointment=a.id;const c=state.clients.find(x=>x.id===a.clientId)||state.clients.find(x=>x.name===a.client);
@@ -1134,8 +1222,9 @@
     const page=e.target.closest('[data-page]'); if(page){state.page=page.dataset.page;state.clientQuery='';render();return;}
     const action=e.target.closest('[data-action]'); if(!action)return;
     const a=action.dataset.action;
-    if(a==='auth-mode-signup'){renderAuthGate('signup');return;}
-    if(a==='auth-mode-login'){renderAuthGate('login');return;}
+    if(a==='auth-mode-login'){renderAuthGate(state.invitationDetails?'invite-login':'login');return;}
+    if(a==='invite-use-login'){renderAuthGate('invite-login');return;}
+    if(a==='invite-use-signup'){renderAuthGate('invite');return;}
     if(a==='auth-retry'){bootApplication();return;}
     if(a==='auth-logout'){if(supabaseClient)supabaseClient.auth.signOut();return;}
     if(a==='toggle-role-menu'){const m=document.getElementById('roleMenu');m.hidden=!m.hidden;return;}
@@ -1149,6 +1238,18 @@
     if(a==='new-expense'){expenseModal();return;}
     if(a==='new-commission-rule'){commissionRuleModal();return;}
     if(a==='refresh-management'){if(state.managementPreview){seedManagementPreview();render();toast('Dados da prévia restaurados.');return;}state.managementLoading=true;render();refreshManagementData();return;}
+    if(a==='refresh-users'){state.usersLoading=true;render();refreshUsersData();return;}
+    if(a==='new-user-invite'){newUserInviteModal();return;}
+    if(a==='edit-user-access'){editUserAccessModal(action.dataset.id);return;}
+    if(a==='remove-user-access'){removeUserAccessModal(action.dataset.id);return;}
+    if(a==='revoke-user-invite'){revokeUserInvitationModal(action.dataset.id);return;}
+    if(a==='copy-user-invite'){
+      const invitation=state.userInvitations.find(item=>item.record_id===action.dataset.id);if(!invitation?.invitation_token){toast('Convite não encontrado.');return;}
+      const link=`${window.location.origin}${window.location.pathname}?invite=${encodeURIComponent(invitation.invitation_token)}`;copyText(link).then(ok=>toast(ok?'Link do convite copiado.':'Não foi possível copiar o link.'));return;
+    }
+    if(a==='copy-current-invite'){
+      const input=document.getElementById('invitationLink');if(input)copyText(input.value).then(ok=>toast(ok?'Link do convite copiado.':'Não foi possível copiar o link.'));return;
+    }
     if(a==='new-order'){openCheckout();return;}
     if(a==='appointment'){appointmentModal(action.dataset.id);return;}
     if(a==='open-checkout'){openCheckout(action.dataset.id);return;}
@@ -1186,7 +1287,10 @@
     if(e.target.id==='checkoutDiscount'){const form=document.getElementById('checkoutForm');const subtotal=Number(form?.dataset.subtotal||0);const discount=Math.min(Math.max(0,subtotal-.01),Math.max(0,Number(e.target.value)||0));const total=Math.max(0,subtotal-discount);form.dataset.total=String(total);document.getElementById('checkoutTotal').textContent=money(total);const amounts=document.querySelectorAll('.payment-amount');if(amounts.length===1)amounts[0].value=total.toFixed(2);updatePaymentSummary();return;}
     if(e.target.classList.contains('payment-amount'))updatePaymentSummary();
   });
-  document.addEventListener('change',e=>{if(e.target.id==='staffFilter'){const val=e.target.value;const live=state.supabaseMode&&state.authenticated;document.querySelectorAll('[data-action="appointment"]').forEach(row=>{const appt=state.appointments.find(a=>a.id===Number(row.dataset.id));const matchesAll=val==='all'||(!live&&val==='Todos profissionais');row.style.display=(!appt||matchesAll||(live?String(appt.professionalId)===val:appt.professional===val))?'':'none';});}});
+  document.addEventListener('change',e=>{
+    if(e.target.matches('#userInviteForm [name="role"],#userAccessForm [name="role"]')){toggleAccessProfessionalField(e.target.form);return;}
+    if(e.target.id==='staffFilter'){const val=e.target.value;const live=state.supabaseMode&&state.authenticated;document.querySelectorAll('[data-action="appointment"]').forEach(row=>{const appt=state.appointments.find(a=>a.id===Number(row.dataset.id));const matchesAll=val==='all'||(!live&&val==='Todos profissionais');row.style.display=(!appt||matchesAll||(live?String(appt.professionalId)===val:appt.professional===val))?'':'none';});}
+  });
   document.addEventListener('keydown',e=>{
     if(e.key==='Escape'){closeModal();document.getElementById('roleMenu').hidden=true;}
     if((e.metaKey||e.ctrlKey)&&e.key.toLowerCase()==='k'){e.preventDefault();document.getElementById('globalSearch').focus();}
@@ -1197,22 +1301,60 @@
   document.addEventListener('submit',async e=>{
     e.preventDefault();
     if(e.target.id==='authForm'){
-      const form=e.target;const values=new FormData(form);const mode=form.dataset.mode;const email=String(values.get('email')||'').trim();const password=String(values.get('password')||'');
-      if(mode==='signup'){
-        const fullName=String(values.get('fullName')||'').trim();const {data,error}=await supabaseClient.auth.signUp({email,password,options:{data:{full_name:fullName},emailRedirectTo:window.location.origin}});
-        if(error){showFormError(form,friendlyError(error,'Não foi possível criar a conta.'));return;}
-        if(!data.session){renderAuthGate('confirm',`Enviamos um link de confirmação para ${email}. Abra a mensagem e depois entre com sua senha.`);return;}
-        await loadAuthenticatedWorkspace(data.session);return;
-      }
-      const {data,error}=await supabaseClient.auth.signInWithPassword({email,password});
-      if(error){showFormError(form,friendlyError(error,'Não foi possível entrar.'));return;}
-      await loadAuthenticatedWorkspace(data.session);return;
+      const form=e.target;const values=new FormData(form);const email=String(values.get('email')||'').trim();const password=String(values.get('password')||'');setFormBusy(form,true);
+      try{const {data,error}=await supabaseClient.auth.signInWithPassword({email,password});if(error){showFormError(form,friendlyError(error,'Não foi possível entrar.'));return;}if(state.pendingInvitationToken&&!(await acceptPendingInvitation(data.session)))return;await loadAuthenticatedWorkspace(data.session);return;}
+      catch(error){if(document.body.contains(form))showFormError(form,friendlyError(error,'Não foi possível entrar.'));return;}
+      finally{if(document.body.contains(form))setFormBusy(form,false);}
     }
-    if(e.target.id==='businessSetupForm'){
-      try{await createFirstBusiness(e.target);}catch(error){renderAuthGate('business',friendlyError(error));}return;
+    if(e.target.id==='invitationSignupForm'){
+      const form=e.target;const values=new FormData(form);const invitation=state.invitationDetails;const token=state.pendingInvitationToken;if(!invitation||!token){showFormError(form,'Este convite não está mais disponível.');return;}
+      const fullName=String(values.get('fullName')||'').trim();const password=String(values.get('password')||'');setFormBusy(form,true);
+      try{
+        try{localStorage.setItem('pendingInvitationToken',token);}catch{}
+        const redirect=`${window.location.origin}${window.location.pathname}?invite=${encodeURIComponent(token)}`;
+        const {data,error}=await supabaseClient.auth.signUp({email:invitation.email,password,options:{data:{full_name:fullName},emailRedirectTo:redirect}});
+        if(error){showFormError(form,friendlyError(error,'Não foi possível criar o acesso.'));return;}
+        if(!data.session){renderAuthGate('confirm',`Enviamos um link de confirmação para ${invitation.email}. Confirme o e-mail para concluir o vínculo.`);return;}
+        if(!(await acceptPendingInvitation(data.session)))return;await loadAuthenticatedWorkspace(data.session);return;
+      }catch(error){if(document.body.contains(form))showFormError(form,friendlyError(error,'Não foi possível criar o acesso.'));return;}
+      finally{if(document.body.contains(form))setFormBusy(form,false);}
     }
-    if(e.target.id==='catalogSetupForm'){
-      try{await createInitialCatalog(e.target);}catch(error){renderAuthGate('catalog',friendlyError(error));}return;
+    if(e.target.id==='invitationLoginForm'){
+      const form=e.target;const values=new FormData(form);const invitation=state.invitationDetails;const token=state.pendingInvitationToken;if(!invitation||!token){showFormError(form,'Este convite não está mais disponível.');return;}
+      const password=String(values.get('password')||'');setFormBusy(form,true);
+      try{
+        const {data,error}=await supabaseClient.auth.signInWithPassword({email:invitation.email,password});
+        if(error){showFormError(form,friendlyError(error,'Não foi possível entrar.'));return;}
+        if(!(await acceptPendingInvitation(data.session)))return;await loadAuthenticatedWorkspace(data.session);return;
+      }catch(error){if(document.body.contains(form))showFormError(form,friendlyError(error,'Não foi possível entrar.'));return;}
+      finally{if(document.body.contains(form))setFormBusy(form,false);}
+    }
+    if(e.target.id==='userInviteForm'){
+      const form=e.target;const values=new FormData(form);const role=String(values.get('role')||'');const professionalId=role==='professional'?String(values.get('professionalId')||''):null;if(role==='professional'&&!professionalId){showFormError(form,'Selecione o profissional que usará esta conta.');return;}setFormBusy(form,true);
+      try{
+        const {data,error}=await supabaseClient.rpc('create_user_invitation',{p_business_id:state.businessId,p_email:String(values.get('email')||'').trim(),p_role:role,p_branch_id:role==='admin'?null:state.branchId,p_professional_id:professionalId||null});
+        if(error){showFormError(form,friendlyError(error,'Não foi possível criar o convite.'));return;}
+        const invitation=Array.isArray(data)?data[0]:data;if(!invitation?.invitation_token){showFormError(form,'O convite foi criado sem retornar o link. Atualize a área de usuários.');return;}
+        closeModal();await loadUsersData();render();showInvitationLink(invitation);return;
+      }catch(error){showFormError(form,friendlyError(error,'Não foi possível criar o convite.'));return;}finally{if(document.body.contains(form))setFormBusy(form,false);}
+    }
+    if(e.target.id==='userAccessForm'){
+      const form=e.target;const values=new FormData(form);const role=String(values.get('role')||'');const professionalId=role==='professional'?String(values.get('professionalId')||''):null;if(role==='professional'&&!professionalId){showFormError(form,'Selecione o profissional que usará esta conta.');return;}setFormBusy(form,true);
+      try{
+        const {error}=await supabaseClient.rpc('update_business_user_access',{p_membership_id:form.dataset.id,p_role:role,p_branch_id:role==='admin'?null:state.branchId,p_professional_id:professionalId||null});
+        if(error){showFormError(form,friendlyError(error,'Não foi possível atualizar o acesso.'));return;}
+        closeModal();await loadUsersData();render();toast('Perfil de acesso atualizado.');return;
+      }catch(error){showFormError(form,friendlyError(error,'Não foi possível atualizar o acesso.'));return;}finally{if(document.body.contains(form))setFormBusy(form,false);}
+    }
+    if(e.target.id==='revokeUserInvitationForm'){
+      const form=e.target;setFormBusy(form,true);
+      try{const {error}=await supabaseClient.rpc('revoke_user_invitation',{p_invitation_id:form.dataset.id});if(error){showFormError(form,friendlyError(error,'Não foi possível revogar o convite.'));return;}closeModal();await loadUsersData();render();toast('Convite revogado.');return;}
+      catch(error){showFormError(form,friendlyError(error,'Não foi possível revogar o convite.'));return;}finally{if(document.body.contains(form))setFormBusy(form,false);}
+    }
+    if(e.target.id==='removeUserAccessForm'){
+      const form=e.target;setFormBusy(form,true);
+      try{const {error}=await supabaseClient.rpc('remove_business_user',{p_membership_id:form.dataset.id});if(error){showFormError(form,friendlyError(error,'Não foi possível remover o acesso.'));return;}closeModal();await loadUsersData();render();toast('Acesso removido.');return;}
+      catch(error){showFormError(form,friendlyError(error,'Não foi possível remover o acesso.'));return;}finally{if(document.body.contains(form))setFormBusy(form,false);}
     }
     if(e.target.id==='kanbanScheduleForm'){
       const form=e.target;const data=new FormData(form);const waitlistId=Number(form.dataset.waitlistId);const request=state.waitlist.find(item=>item.id===waitlistId);const client=request&&state.clients.find(item=>item.id===request.clientId);const live=state.supabaseMode&&state.authenticated;
@@ -1332,5 +1474,5 @@
   }
   bootApplication();
 </script>
-<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a49a7fdf9beeb6fb',t:'MTc5MTg1NDE5Mg=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+</body>
 </html>
